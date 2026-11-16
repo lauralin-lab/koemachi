@@ -9,9 +9,9 @@
   <a href="ARCHITECTURE.md">How it is built</a>
 </p>
 
-<p align="center"><img src="docs/hero.gif" alt="An empty meadow fills with trees when asked; then the town turns to a rainy night" width="860"></p>
+<p align="center"><img src="docs/hero.gif" alt="Spoken World: the camera comes down over the town; then, on the words Make it a rainy night, the street turns to night and rain" width="860"></p>
 
-<p align="center"><sub>"Add many trees here." &nbsp;…&nbsp; "Make it a rainy night."</sub></p>
+<p align="center"><sub>"Make it a rainy night."</sub></p>
 
 <table>
   <tr>
