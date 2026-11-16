@@ -183,6 +183,7 @@
     return new Blob(chunks, { type: (mr.mimeType || mime || 'video/webm').split(';')[0] });
   }
   async function makeReal(job) {
+    if (!key) { needKey({ what: 'real', text: '' }); throw { code: 'not_granted', message: T('“转成实拍”需要 Gemini key', 'Make it real needs a Gemini key') }; }
     await keyReady; const say = job.onState || (() => {});
     let blob = job.blob, previz = null;
     if (job.tiles > 1 && job.tile >= 0) { say(T('正在剪出这个机位…', 'Cutting out this angle…')); previz = blob = await cropTile(blob, job.tile, job.tiles, job.signal); }
@@ -214,8 +215,11 @@
     save: downloads,
     video: { name: 'Gemini Omni', makeReal },
     gate: null, // access is the key dialog below
+    access: { open: (q) => needKey(q) }, // a visitor looking around without a key said something that needs Gemini
     strings: {
       aiReady: ['AI 可用（Gemini）', 'AI available (Gemini)'],
+      aiLater: ['预览：还没有填 Gemini key，只有当场生效的指令能用', 'Preview: no Gemini key yet, so only the instant commands work'],
+      needTag: ['需要 key', 'needs key'],
       fClipsS: ['录好的视频。点开一段来看，再点“转成实拍”。', CLIPS],
       cmpB2: ['点“转成实拍”，或者把别处做好的实拍视频拖到这里。', DROP],
       cmpBT: ['Gemini Omni', 'Gemini Omni'],
@@ -225,8 +229,38 @@
   };
 
   /* ---------- asking for the key ---------- */
-  function askKey(err) {
-    let g = document.getElementById('keyGate'); if (g) { const e = g.querySelector('.kerr'); if (e) e.textContent = err || ''; return; }
+  /* Looking around without a key. A visitor who has no key yet can still walk in: the town, the sky, and the commands the page understands by
+     itself (resize, recolour, add something it already knows, the weather, the time, a camera orbit) all work. What makes this Spoken World does
+     not: building what was never made before, people who answer, voice, a designed shot, real footage. So the page never lets that pass as the
+     whole thing: the dialog says what is missing before they go in, a bar says so the whole time they are in, the suggestions that need Gemini
+     are marked, and saying anything that needs it brings the dialog back with their own sentence in it, which runs as soon as a key is there. */
+  let demo = false, pending = '', lastNeed = 0;
+  const NEED = {
+    say: ['这句话要 Gemini 来理解', 'That one needs Gemini'], build: ['造没见过的东西要 Gemini', 'Building something new needs Gemini'], scene: ['造一整个场景要 Gemini', 'Building a whole scene needs Gemini'],
+    shot: ['设计这个镜头要 Gemini', 'Designing that shot needs Gemini'], path: ['设计这条路线要 Gemini', 'Designing that path needs Gemini'], talk: ['镇上的人要靠 Gemini 才会回答', 'People here answer through Gemini'],
+    voice: ['开口说话要 Gemini 来听', 'Talking to the world needs Gemini'], real: ['“转成实拍”要 Gemini Omni', 'Make it real needs Gemini Omni'],
+  };
+  function needKey(q) {
+    if (key) return; q = q || {}; const now = performance.now(); if (now - lastNeed < 900 && document.getElementById('keyGate')) return; lastNeed = now;
+    if (q.text && q.what !== 'talk' && q.what !== 'voice') pending = String(q.text).slice(0, 300);
+    askKey('', { what: NEED[q.what] ? q.what : 'say', text: q.text || '' });
+  }
+  function demoBar(on) {
+    let b = document.getElementById('demoBar'); if (!on) { if (b) b.remove(); return; } if (b) return;
+    const st = document.createElement('style'); st.textContent = '#demoBar{position:fixed;left:50%;top:62px;transform:translateX(-50%);z-index:9;display:flex;align-items:center;gap:10px;max-width:min(760px,94vw);padding:7px 8px 7px 12px;border-radius:10px;border:1px solid rgba(255,216,74,.55);background:rgba(20,18,12,.9);color:#f4efe6;font:400 12.5px/1.35 var(--f-ui,system-ui);box-shadow:0 8px 28px rgba(0,0,0,.35)}#demoBar b{flex:none;padding:3px 7px;border-radius:5px;background:#ffd84a;color:#0a0d12;font:600 10.5px/1 var(--f-mono,monospace);letter-spacing:.08em}#demoBar span{min-width:0}#demoBar button{flex:none;padding:7px 12px;border:0;border-radius:7px;background:#ffd84a;color:#0a0d12;font:600 12px/1 var(--f-display,system-ui);letter-spacing:.06em;text-transform:uppercase;cursor:pointer}#intro:not(.off)~#demoBar{display:none}@media (max-width:640px){#demoBar{top:auto;bottom:calc(var(--bar-h,150px) + 12px);font-size:12px}}';
+    document.head.appendChild(st);
+    b = document.createElement('div'); b.id = 'demoBar'; b.setAttribute('role', 'status');
+    const tag = document.createElement('b'), tx = document.createElement('span'), bt = document.createElement('button');
+    tag.textContent = T('预览', 'PREVIEW'); tx.textContent = T('现在只有“当场”指令能用，这只是一个小角落。造任何你说得出的东西、会回答的居民、语音、设计镜头、转成实拍，都要填 Gemini key 才开始。', 'Only the instant commands work here, and that is a small corner of it. Building anything you can name, people who answer, voice, designed shots and real footage start with a Gemini key.');
+    bt.type = 'button'; bt.textContent = T('填 key', 'Add key'); bt.onclick = (e) => { e.stopPropagation(); askKey(); };
+    b.append(tag, tx, bt); document.body.appendChild(b);
+  }
+  function enterDemo() {
+    demo = true; demoBar(true); keyChip();
+    try { if (window.YX && YX.hooks && YX.hooks.aiLater) YX.hooks.aiLater(); } catch (e) {}
+  }
+  function askKey(err, need) {
+    let g = document.getElementById('keyGate'); if (g) { if (!need) { const e = g.querySelector('.kerr'); if (e) e.textContent = err || ''; return; } g.remove(); }
     const st = document.createElement('style');
     st.textContent = '#keyGate{position:fixed;inset:0;z-index:70;display:grid;place-items:center;background:rgba(6,8,12,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);overflow:auto;padding:24px 0}'
       + '#keyGate .kc{color-scheme:light;width:min(440px,90vw);padding:28px 28px 20px;border-radius:16px;background:#f6f7f9;color:#0a0d12;font:400 14.5px/1.5 var(--f-ui,system-ui);box-shadow:0 18px 60px rgba(0,0,0,.35)}'
@@ -234,15 +268,20 @@
       + '#keyGate .row{display:flex;gap:8px;margin:0 0 6px}#keyGate input[type=password]{flex:1;min-width:0;padding:12px 14px;border:1.5px solid #cfd3d9;border-radius:10px;background:#fff;color:#0a0d12;font:500 14px/1.2 var(--f-mono,monospace);outline:none}#keyGate input[type=password]:focus{border-color:#0a0d12}'
       + '#keyGate button{align-self:stretch;height:auto;min-height:46px;padding:0 24px;border:0;border-radius:10px;background:var(--voice,#ffd84a);color:#0a0d12;font:600 13px/1 var(--f-display,system-ui);letter-spacing:.1em;text-transform:uppercase;cursor:pointer}#keyGate button:disabled{opacity:.5;cursor:default}'
       + '#keyGate .meta{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13px;color:#4a505a}#keyGate .meta label{display:flex;align-items:center;gap:6px;user-select:none;cursor:pointer}#keyGate .meta input{accent-color:#0a0d12;margin:0}#keyGate a{color:#0b57d0;text-decoration:none;white-space:nowrap}#keyGate a:hover{text-decoration:underline}'
+      + '#keyGate .try{margin:0 0 14px;padding:12px 12px 11px;border-radius:10px;border:1.5px dashed #c9cdd4}#keyGate .try button{width:100%;min-height:40px;padding:0 14px;background:#fff;border:1.5px solid #0a0d12;letter-spacing:.06em}#keyGate .try p{margin:9px 0 0;font-size:12.5px;line-height:1.5;color:#4a505a}#keyGate .try p b{color:#0a0d12;font-weight:600}#keyGate .said{margin:-8px 0 16px;padding:10px 12px;border-radius:10px;background:#fff6cf;color:#0a0d12;font:500 14px/1.4 var(--f-ui,system-ui);overflow-wrap:anywhere}'
       + '#keyGate .kerr{min-height:1.1em;color:#b3261e;font-size:13px;margin:6px 0 10px}'
       + '#keyGate .uses{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 14px}#keyGate .use{padding:10px 10px 9px;border-radius:10px;background:#eceef1}#keyGate .use b{display:block;font:600 12.5px/1.2 var(--f-display,system-ui)}#keyGate .use span{display:block;margin-top:3px;font-size:11.5px;line-height:1.3;color:#5b6270}'
       + '#keyGate details{border-top:1px solid #e1e4e8;padding-top:10px;font-size:12.5px;line-height:1.5;color:#5b6270}#keyGate summary{cursor:pointer;color:#4a505a;font-weight:500;list-style:none}#keyGate summary::-webkit-details-marker{display:none}#keyGate summary:after{content:" ›"}#keyGate details[open] summary:after{content:" ⌄"}#keyGate details p{margin:8px 0 0}';
     document.head.appendChild(st);
     g = document.createElement('div'); g.id = 'keyGate'; g.setAttribute('role', 'dialog'); g.setAttribute('aria-modal', 'true');
-    g.innerHTML = '<div class="kc"><h2></h2><p class="sub"></p><form class="row"><input type="password" autocomplete="off" spellcheck="false"><button type="submit"></button></form><div class="meta"><label><input type="checkbox" class="rem"><span class="rl"></span></label><a target="_blank" rel="noopener" href="https://aistudio.google.com/apikey"></a></div><div class="kerr"></div><div class="uses"><div class="use"><b class="b1"></b><span class="m1"></span></div><div class="use"><b class="b2"></b><span class="m2"></span></div><div class="use"><b class="b3"></b><span class="m3"></span></div></div><details><summary></summary><p class="d1"></p></details></div>';
+    g.innerHTML = '<div class="kc"><h2></h2><p class="sub"></p><p class="said" hidden></p><form class="row"><input type="password" autocomplete="off" spellcheck="false"><button type="submit"></button></form><div class="meta"><label><input type="checkbox" class="rem"><span class="rl"></span></label><a target="_blank" rel="noopener" href="https://aistudio.google.com/apikey"></a></div><div class="kerr"></div><div class="uses"><div class="use"><b class="b1"></b><span class="m1"></span></div><div class="use"><b class="b2"></b><span class="m2"></span></div><div class="use"><b class="b3"></b><span class="m3"></span></div></div><div class="try"><button type="button" class="look"></button><p class="lk"></p></div><details><summary></summary><p class="d1"></p></details></div>';
     const $q = (s) => g.querySelector(s);
-    $q('h2').textContent = T('填入你的 Gemini API key', 'Add your Gemini API key');
-    $q('.sub').textContent = T('你说的每句话都由 Gemini 现场搭建，用的是你自己的 key。', 'Everything you say is built by Gemini, on your own key.');
+    $q('h2').textContent = need ? T(NEED[need.what][0], NEED[need.what][1]) : T('填入你的 Gemini API key', 'Add your Gemini API key');
+    $q('.sub').textContent = need ? (need.text && pending ? T('填好 key，这句话马上就做：', 'Add your key and this runs right away:') : T('填好 key 就能用，用的是你自己的 key。', 'Add your key and it works, on your own key.')) : T('你说的每句话都由 Gemini 现场搭建，用的是你自己的 key。', 'Everything you say is built by Gemini, on your own key.');
+    if (need && need.text && pending) { $q('.said').hidden = false; $q('.said').textContent = '“' + pending + '”'; }
+    $q('.look').textContent = need || demo ? T('先不填，继续逛', 'Not now, keep looking around') : T('没有 key？先进去逛逛', 'No key yet? Look around first');
+    $q('.lk').innerHTML = T('不填 key 也能进去走走，用“当场”指令：变大变小、换颜色、加一棵树、换天气。<b>这只是一个小角落。</b>造任何你说得出的东西、会回答的居民、语音、设计镜头、转成实拍，全都跑在 Gemini 上，填了 key 才开始。', 'Without a key you can walk the town and use the instant commands: resize, recolour, add a tree, change the weather. <b>That is a small corner of it.</b> Building anything you can name, people who answer, voice, designed shots and real footage all run on Gemini, and start when you add a key.');
+    $q('.look').onclick = () => { g.remove(); pending = ''; enterDemo(); };
     $q('input[type=password]').placeholder = T('粘贴 key', 'Paste your key'); $q('button').textContent = T('开始', 'Start'); $q('.rl').textContent = T('在这台设备上记住', 'Remember on this device'); $q('.meta a').textContent = T('去拿一个 key ↗', 'Get a key ↗');
     $q('.b1').textContent = T('世界和居民', 'World & people'); $q('.m1').textContent = 'Gemini 4 Hydrogen';
     $q('.b2').textContent = T('语音', 'Voice'); $q('.m2').textContent = 'Gemini Transcribe Live';
@@ -256,7 +295,8 @@
       let bad = ''; try { bad = await check(k); } catch (x) { bad = T('暂时连不上 Gemini：', 'Gemini cannot be reached right now: ') + ((x && x.message) || x); }
       btn.disabled = false; if (bad) { $q('.kerr').textContent = bad; return; }
       key = k; try { sessionStorage.setItem(SK, k); if (rem.checked) localStorage.setItem(SK, k); else localStorage.removeItem(SK); } catch (x) {}
-      g.remove(); keyOk(k);
+      g.remove(); keyOk(k); const run = pending, was = demo; pending = ''; demo = false; demoBar(false); keyChip();
+      if (was) setTimeout(() => { try { if (YX.ui && YX.ui.toast) YX.ui.toast(T('Gemini 接上了：现在什么都可以说', 'Gemini is connected: now anything you say works')); if (run && YX.mind) YX.mind.commit(run); } catch (x) {} }, 700);
       try { if (window.YX && YX.mind && !YX.mind.sample) YX.mind.setSample(sample); } catch (x) {} // a key that replaced one that stopped working: the world gets its AI back
     };
     // nothing behind the dialog takes keys or clicks while it is open
@@ -265,11 +305,11 @@
   }
   window.addEventListener('keydown', (e) => { if (document.getElementById('keyGate') && !e.target.closest('#keyGate')) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
   function keyChip() { // on the title card: which key is in use, and a way to change it
-    const intro = document.getElementById('intro'); if (!intro || document.getElementById('keyChip')) return;
+    const intro = document.getElementById('intro'); if (!intro) return; const b0 = document.getElementById('keyChip'); if (b0) { b0.textContent = key ? T('Gemini key · 更换', 'Gemini key · change') : T('填入 Gemini key', 'Add a Gemini key'); return; }
     const b = document.createElement('button'); b.id = 'keyChip'; b.type = 'button';
     b.style.cssText = 'position:absolute;left:16px;bottom:12px;z-index:3;padding:6px 10px;border:1px solid rgba(255,255,255,.25);border-radius:8px;background:rgba(10,12,18,.45);color:#f4efe6;font:500 12px/1 var(--f-ui,system-ui);cursor:pointer';
-    b.textContent = T('Gemini key · 更换', 'Gemini key · change');
-    b.onclick = (e) => { e.stopPropagation(); forget(); askKey(); };
+    b.textContent = key ? T('Gemini key · 更换', 'Gemini key · change') : T('填入 Gemini key', 'Add a Gemini key');
+    b.onclick = (e) => { e.stopPropagation(); if (key) forget(); askKey(); };
     intro.appendChild(b);
   }
   // Run from your own computer (node site/serve.js), the key can come from an env file there instead of being typed: the local server hands it

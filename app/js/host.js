@@ -9,7 +9,10 @@
      video   null | { name, makeReal(job) -> Promise<{ real: Blob, previz?: Blob }> }: turn a recorded clip into real footage
      gate    null | { title, body, note, action: { label, href } }: what to say when the AI cannot be reached and the world should not start
                                    (each text is [中文, English]); null: the host looks after access itself
-     strings { key: [中文, English] }: wording of the page that differs in this home (keys of the text table in ui.js, plus aiReady)
+     access  null | { open({ what, text }) }: a home that lets visitors in before they have the AI (it calls YX.hooks.aiLater() when it does, and
+                                   resolves `ai` and `voice` later) is asked for it here when something said needs it; `text` is what was said,
+                                   `what` the kind of thing ('say', 'build', 'scene', 'shot', 'path', 'talk', 'voice')
+     strings { key: [中文, English] }: wording of the page that differs in this home (keys of the text table in ui.js, plus aiReady, aiLater, needTag)
 
    A host is one object with those members. The Claude artifact is built in below (window.claude). Another home registers itself by setting
    window.SW_HOST before this file runs: the open-web build does so with site/gemini.js (the viewer's own Gemini API key).
@@ -37,7 +40,7 @@
   }
   const given = window.SW_HOST && typeof window.SW_HOST === 'object' ? window.SW_HOST : null, base = given ? null : claudeHost();
   const H = (YX.host = given || base);
-  H.name = H.name || 'custom'; H.strings = H.strings || {}; if (H.gate === undefined) H.gate = null; if (H.video === undefined) H.video = null;
+  H.name = H.name || 'custom'; H.strings = H.strings || {}; if (H.gate === undefined) H.gate = null; if (H.video === undefined) H.video = null; if (H.access === undefined) H.access = null;
   for (const k of ['ai', 'voice', 'save']) H[k] = Promise.resolve(H[k] == null ? null : H[k]).catch(() => null);
   if (H.video && typeof H.video.makeReal === 'function') YX.hooks.makeReal = H.video.makeReal;
 })();

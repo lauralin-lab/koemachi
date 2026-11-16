@@ -56,8 +56,9 @@ clip, keeping the camera move and where everything stands. The page comes with t
 
 ## Ways to run it
 
-It needs a model to do any of this, so there is no mode without one: either you give the page a Gemini API key, or you
-run it as a Claude artifact on your own Claude account.
+It needs a model for nearly all of this: either you give the page a Gemini API key, or you run it as a Claude artifact
+on your own Claude account. Without a key the hosted page still lets you walk in and look around, as a preview: only
+the built-in commands work there, and the page says so.
 
 ### 1. The hosted page, with your Gemini key
 
@@ -93,7 +94,8 @@ and the `Permissions-Policy: microphone=(self)` header.
 
 `app/` on its own is a complete page that takes its model, speech-to-text and file saving from the Claude
 artifact runtime (`window.claude.use(...)`, wrapped in `app/js/host.js`). Published as an artifact from
-Claude, it needs no API key: each viewer uses their own Claude account. The video model is not available
+Claude, it needs no API key: each viewer has to be signed in to Claude (the page says so if they are not)
+and plays on their own Claude usage. The video model is not available
 there, so "Make it real" exports the clip for you to take elsewhere.
 
 ## Cost

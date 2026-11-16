@@ -832,7 +832,7 @@
   let chain = Promise.resolve(), routing = 0;
   function run(text, ph) {
     ph.raw = String(text || '');
-    const entry = logStart(text, 'local'), ops = []; let rest = null;
+    const entry = logStart(text, 'local'), ops = []; let rest = null; M.said = text;
     try {
       const p = incPrefix(text, ph); reconcile(ph, p.flat);
       for (const f of ph.applied) ops.push(f);
@@ -844,7 +844,7 @@
       }
     } catch (e) { console.warn(e); rest = text; }
     if (rest == null) { finish(text, ops, entry.msgs, ph); logEnd(entry, entry.warn && entry.msgs.length <= 1 ? 'fail' : 'ok'); return null; }
-    if (!M.sample) { finish(text, ops, entry.msgs, ph); logEnd(entry, 'fail', entry.msgs.length ? T('后半句需要 AI，目前没有连接', 'The rest of that needs the AI, which is not connected') : T('这句需要 AI 来理解，目前没有连接', 'That one needs the AI, which is not connected')); return null; }
+    if (!M.sample) { YX.needAI('say', entry.msgs.length && typeof rest === 'string' && rest.trim() ? rest : text); finish(text, ops, entry.msgs, ph); logEnd(entry, 'fail', entry.msgs.length ? T('后半句需要 AI，目前没有连接', 'The rest of that needs the AI, which is not connected') : T('这句需要 AI 来理解，目前没有连接', 'That one needs the AI, which is not connected')); return null; }
     entry.tier = 'quick'; logUp(entry);
     return route(text, rest, ph, entry, entry.msgs.slice(), ops);
   }
@@ -1115,7 +1115,7 @@
     say(r && r.msg ? r.msg : T(def.label + ' 动起来了', def.label + ' is moving')); if (hooks.ui) hooks.ui();
   };
   hooks.invent = function (op, ctx) {
-    if (!M.sample) return { ok: false, msg: T('造新物体需要 AI，目前没有连接', 'Building something new needs the AI, which is not connected') };
+    if (!M.sample) return YX.needAI('build'), { ok: false, msg: T('造新物体需要 AI，目前没有连接', 'Building something new needs the AI, which is not connected') };
     const reps = op.replace != null ? ctx.many(op.replace).filter((o) => o.type !== '__pending' && !o.hold) : [];
     const raw = String(op.type || op.label || 'thing'), ft = YX.findType(raw) || YX.findType(op.label || '');
     if (ft) return reps.length ? YX.OPS.become(Object.assign({}, op, { op: 'become', id: reps.map((o) => '#' + o.id), type: ft.type }), ctx) : YX.OPS.add(Object.assign({}, op, { op: 'add', type: ft.type }), ctx);
@@ -1164,7 +1164,7 @@
     return '你是 3D 世界的布景师。根据描述设计一个完整、好看、有层次的场景，输出 JSONL 操作（每行一个 JSON，不要解释，不要代码块）。引擎会边收边搭，所以先输出环境和大件，再输出细节。\n\n## 描述\n' + brief + '\n\n## 坐标与约定\n- 单位米。x 向东，z 向南。' + (clear ? '世界已清空，玩家站在 (0, 18)，面朝北（-z 方向）。把主体布置在 x∈[-90,90]、z∈[-110,10] 的范围内，视觉中心在 (0,-25) 附近；玩家脚下和正前方 12 米内保持空旷。' : '保留现有世界，在玩家前方的空地上扩建（玩家位置和朝向见下方场景）。') + '\n- 位置用 "place":{"at":[x,z]}（引擎会自动避让重叠）。只有会飞或悬浮的东西（cloud、balloon、bird，或 motion 为 fly/hover/drift 的 invent）才能加 "height"；其它东西有重力，都落在地面上。\n- rot（度）可选：0=正面朝南(+z)，90=朝东，180=朝北，270=朝西。建筑沿路摆放时省略 rot，引擎会让它朝向最近的路。\n- road 的 length 沿东西向；南北向的路写 "rot":90。路要先于路边建筑输出。\n\n## 可用操作\n{"op":"env","time":…,"weather":…,"ground":"grass|sand|snow|dirt|stone","light":…,"look":…}\n{"op":"add","type":T,"params":{…},"place":{"at":[x,z]},"rot":0,"scale":1,"name":""}\n{"op":"scatter","type":T,"params":{…},"count":12,"radius":15,"place":{"at":[x,z]}}\n{"op":"row","type":T,"count":8,"spacing":8,"place":{"at":[x,z]},"dir":"right"}\n{"op":"crowd","count":6,"activity":"chat|watch|queue|walk|play|sit|wave","place":{"at":[x,z]}}\n{"op":"invent","type":"英文小写名","label":"中文名","brief":"外观细节 40~100 字","size":[宽,高,深],"motion":"none|fly|wander|drive|drift|hover","place":{"at":[x,z]},"count":1}   目录里没有的标志性物体，最多 3 种\n{"op":"shot","save":true,"name":"…"} 不要用。\n\n## 物体目录\n' + YX.catalog() + (clear ? '' : '\n\n## 当前场景\n' + YX.describe(v)) + '\n\n## 要求\n- 输出 45~90 行。要有：环境(env)、道路或水面等骨架、成组的建筑、成片的植被(scatter)、街道小物、会动的东西（人、车、鸟、云）、1~3 个让人记住这个场景的标志物。\n- 物体之间留出合理间距；建筑离路中心线约 路宽/2 + 4 + 建筑进深/2。\n- 善用参数和颜色体现风格（比如海边小镇用白墙蓝顶、沙地、棕榈树、water）。';
   }
   hooks.plan = function (op, ctx) {
-    if (!M.sample) return { ok: false, msg: T('规划场景需要 AI，目前没有连接', 'Planning a scene needs the AI, which is not connected') };
+    if (!M.sample) return YX.needAI('scene'), { ok: false, msg: T('规划场景需要 AI，目前没有连接', 'Planning a scene needs the AI, which is not connected') };
     const brief = String(op.brief || '').slice(0, 600); if (!brief) return { ok: false, msg: T('没有场景描述', 'No scene description') };
     const clear = op.clear !== false, entry = logStart(T('造场景：', 'Build a scene: ') + brief, 'plan'), ctl = new AbortController(); entry.abort = () => ctl.abort(); logUp(entry);
     YX.pushUndo(); ctx.undo = true;
@@ -1194,4 +1194,7 @@
     return en ? 'Make this ' + n + ' a bit bigger' : '把这个' + n + '变大一点';
   };
   M.setSample = function (fn) { M.sample = fn || null; M.denied = false; };
+  /* something that was said could not be done for want of the AI. The home of the page may have a way to get it (host.access): it is told what was said,
+     so the sentence can run by itself once the AI is there. `what` names the kind of thing: 'say', 'build', 'scene', 'shot', 'path', 'talk'. */
+  YX.needAI = function (what, text) { try { if (hooks.needAI) hooks.needAI({ what: what || 'say', text: String(text != null ? text : M.said || '') }); } catch (e) {} };
 })();

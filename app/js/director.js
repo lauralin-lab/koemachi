@@ -205,7 +205,7 @@
     const keep = (kp, r, by) => { D.last = { kp: { keys: kp.keys.map((k) => ({ t: k.t, pos: k.pos.slice(), look: k.look.slice() })), dur: kp.dur, ease: kp.ease, lens: kp.lens != null ? kp.lens : null, name: kp.name, enter: kp.enter != null ? kp.enter : null }, tg: tg ? tg.id : null, f, text: q.text || '', move: m, sh: r.sh, by, at: performance.now() }; showTools(); };
     const classic = () => { const kp = m ? classicKeys(m, tg, op, f) : null; if (!kp) return null; if (q.rec) kp.dur = clamp(kp.dur, 2, 10); const plan = build(kp, tg, f), r = fly(plan, tg, q.rec, plan.raw, plan.obs); keep(kp, r, 'classic'); return { plan, r }; };
     if (!M.sample || q.instant || D.busy) { // no model to ask (or a one-tap button): the classic move, fitted to the place
-      const c = classic(); if (!c) return { ok: false, msg: M.sample ? T('上一个镜头还在设计中', 'The previous shot is still being designed') : T('设计这个镜头需要 AI，目前没有连接', 'Designing that shot needs the AI, which is not connected') };
+      const c = classic(); if (!c) return M.sample || YX.needAI('shot'), { ok: false, msg: M.sample ? T('上一个镜头还在设计中', 'The previous shot is still being designed') : T('设计这个镜头需要 AI，目前没有连接', 'Designing that shot needs the AI, which is not connected') };
       return { ok: true, msg: (c.plan.name || moveName(m)) + (c.plan.detours ? T('（已绕开挡路的东西）', ' (bent round what was in the way)') : '') + (c.r.rec ? T('，正在录制', ', recording') : T('。说“录下来”就拍成片子', '. Say “record it” to film it')) };
     }
     D.busy = true; showCard(T('正在设计镜头…', 'Designing the shot…'), '');
@@ -280,7 +280,7 @@
     const tg = L.tg != null ? W.objs.get(L.tg) || null : null, note = String(q.text || '').trim(), ch = q.change || (D.plain(note) || !M.sample ? readNote(note) : null);
     const land = (kp, by, said) => { const plan = build(kp, tg, L.f), r = fly(plan, tg, !!q.rec, plan.raw, plan.obs, L.sh); D.last = Object.assign({}, L, { kp, sh: r.sh || L.sh, at: performance.now(), notes: (L.notes || []).concat(note).slice(-6), by }); showTools(); return { plan, r, said }; };
     if (ch) { const a = applyNote(L, ch), c = land(a.kp, L.by, a.said); return { ok: true, msg: (L.kp.name || T('镜头', 'Shot')) + T('：', ': ') + a.said.join(T('，', ', ')) + (c.plan.detours ? T('（已绕开挡路的东西）', ' (bent round what was in the way)') : '') + (c.r.rec ? T('，正在录制', ', recording') : '') }; }
-    if (!M.sample) return { ok: false, msg: T('这个修改需要 AI 来重新设计，目前没有连接。可以直接说：远一点、高一点、慢一点、反方向', 'That change needs the AI, which is not connected. These work without it: farther, higher, slower, the other way') };
+    if (!M.sample) return YX.needAI('shot'), { ok: false, msg: T('这个修改需要 AI 来重新设计，目前没有连接。可以直接说：远一点、高一点、慢一点、反方向', 'That change needs the AI, which is not connected. These work without it: farther, higher, slower, the other way') };
     if (D.busy) return { ok: false, msg: T('上一个镜头还在设计中', 'The previous shot is still being designed') };
     D.busy = true; showCard(T('正在修改镜头…', 'Changing the shot…'), '');
     const f = L.f, mid = tg ? [(f.x + tg.x) / 2, (f.z + tg.z) / 2] : [f.x - Math.sin(f.yaw) * 14, f.z - Math.cos(f.yaw) * 14], obs0 = obstaclesNear(mid[0], mid[1], 70, null).sort((a, b) => Math.hypot(a.x - mid[0], a.z - mid[1]) - Math.hypot(b.x - mid[0], b.z - mid[1]));
@@ -375,7 +375,7 @@
         if (!said.length) return { ok: false, msg: T('这条路线上没有这一项可改', 'That is not something this path has') };
         return { ok: true, msg: land(R, 'note', said) }; }
     }
-    if (!M.sample) return { ok: false, msg: T('设计路线需要 AI，目前没有连接', 'Designing a path needs the AI, which is not connected') };
+    if (!M.sample) return YX.needAI('path'), { ok: false, msg: T('设计路线需要 AI，目前没有连接', 'Designing a path needs the AI, which is not connected') };
     if (D.busy) return { ok: false, msg: T('上一个设计还没完成', 'The previous design is still being made') };
     D.busy = true; showCard(rev ? T('正在修改路线…', 'Changing the path…') : T('正在设计路线…', 'Designing the path…'), '');
     const obs0 = obstaclesNear(o.x, o.z, 90, new Set([o.id])).sort((a, b) => Math.hypot(a.x - o.x, a.z - o.z) - Math.hypot(b.x - o.x, b.z - o.z));

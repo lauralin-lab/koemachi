@@ -70,7 +70,7 @@
     const o = W.grabbed || W.aim, al = $('aimLabel');
     if (o && !YX.cine.active && started) { al.children[0].textContent = (W.grabbed ? T('抓着 ', 'Holding ') : '') + YX.lab(o); al.children[1].textContent = W.grabbed ? T('滚轮旋转 · Alt+滚轮远近 · G 放下', 'Wheel turns · Alt+wheel distance · G drops') : o.wk ? T('重造中…', 'being rebuilt…') : brief(o); al.classList.add('on'); } else al.classList.remove('on');
     if (frameN % 32 === 0) {
-      $('stat').textContent = W.objs.size + T(' 物体 · ', ' objects · ') + YX.stats.fps + ' fps' + (aiState === 'on' || aiState === 'ready' ? '' : aiState === 'wait' ? T(' · 等待授权', ' · waiting for permission') : aiState === 'check' ? '' : T(' · AI 未连接', ' · AI not connected'));
+      $('stat').textContent = W.objs.size + T(' 物体 · ', ' objects · ') + YX.stats.fps + ' fps' + (aiState === 'on' || aiState === 'ready' ? '' : aiState === 'wait' ? T(' · 等待授权', ' · waiting for permission') : aiState === 'check' ? '' : aiState === 'later' ? T(' · 预览，未接 AI', ' · preview, no AI') : T(' · AI 未连接', ' · AI not connected'));
       const en = YX.envNow(); $('timeText').textContent = YX.clock(en.time) + ' ' + YX.wxName(W.env.weather);
       if ($('popTime').classList.contains('on') && document.activeElement !== $('timeRange')) { $('timeRange').value = en.time; $('timeVal').textContent = YX.clock(en.time); }
       sugg = M.suggest(); if (document.activeElement !== cmd) cmd.placeholder = (dict ? T('按住空格说话，或打字：', 'Hold Space to talk, or type: ') : T('打字：', 'Type: ')) + sugg;
@@ -158,15 +158,16 @@
   function frameGrab() { if (!dl) return noSave(); YX.afterRender = (cv) => cv.toBlob((b) => { if (!b) return toast(T('截帧没有成功', 'Could not grab the frame')); dl.save({ filename: 'spoken-world-frame-' + Date.now() + '.png', data: b }).then(() => toast(T('已保存这一帧', 'Frame saved')), saveFail); }, 'image/png'); YX.sfx('shot'); }
 
   /* ---------- chips ---------- */
-  const CHIPS = { zh: [['把眼前的这个房子变大一点，再高一点', '当场'], ['在这个房子的屋顶上加一只鸟', '当场'], ['在马路对面放一个咖啡馆', '当场'], ['变成黄昏', '当场'], ['来一群人在咖啡馆门口聊天', '当场'], ['环绕这个房子拍一圈', '运镜'], ['造一座会转的荷兰风车', '现写'], ['造一个海边渔村', '布景']],
-    en: [['Make this house a bit bigger, then taller', 'instant'], ['Add a bird on the roof of this house', 'instant'], ['Put a café across the street', 'instant'], ['Make it sunset', 'instant'], ['A crowd of people in front of the café', 'instant'], ['Orbit this house', 'camera'], ['Build a Dutch windmill that spins', 'written'], ['Build a seaside fishing village', 'scene']] };
-  function buildChips() { const box = $('chips'); box.textContent = ''; for (const c of CHIPS[S.ui] || CHIPS.en) { const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = c[0]; const em = document.createElement('em'); em.textContent = c[1]; b.appendChild(em); b.onclick = () => { initAudio(); run(c[0]); canvas.focus(); }; box.appendChild(b); } }
+  const CHIPS = { zh: [['把眼前的这个房子变大一点，再高一点', '当场'], ['在这个房子的屋顶上加一只鸟', '当场'], ['在马路对面放一个咖啡馆', '当场'], ['变成黄昏', '当场'], ['来一群人在咖啡馆门口聊天', '当场'], ['环绕这个房子拍一圈', '运镜'], ['造一座会转的荷兰风车', '现写', 1], ['造一个海边渔村', '布景', 1]],
+    en: [['Make this house a bit bigger, then taller', 'instant'], ['Add a bird on the roof of this house', 'instant'], ['Put a café across the street', 'instant'], ['Make it sunset', 'instant'], ['A crowd of people in front of the café', 'instant'], ['Orbit this house', 'camera'], ['Build a Dutch windmill that spins', 'written', 1], ['Build a seaside fishing village', 'scene', 1]] };
+  function buildChips() { const box = $('chips'); box.textContent = ''; for (const c of CHIPS[S.ui] || CHIPS.en) { const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = c[0]; const em = document.createElement('em'), lock = !!c[2] && later(); em.textContent = lock && H.strings.needTag ? T(H.strings.needTag[0], H.strings.needTag[1]) : c[1]; if (lock) b.classList.add('lock'); b.appendChild(em); b.onclick = () => { initAudio(); run(c[0]); canvas.focus(); }; box.appendChild(b); } }
   function run(text) { text = String(text || '').trim(); if (!text) return; spell(text, 'done'); M.commit(text); }
 
   /* ---------- voice ---------- */
   let vMode = 'idle', vHeld = false, vAcc = '', vPartial = '', vState = 'idle';
   function paintVoice() { const mic = $('mic'), on = vState === 'listening' || vState === 'finishing'; mic.classList.toggle('on', on && vMode !== 'idle'); mic.classList.toggle('wait', vState === 'starting'); $('live').setAttribute('aria-pressed', String(vMode === 'live')); $('liveDot').className = 'dot' + (vMode === 'live' && on ? ' live' : voiceState === 'ready' ? ' on' : ''); }
-  function noVoice() { toast(voiceState === 'check' ? T('语音还在准备，稍等一下', 'Voice is still getting ready. One moment') : T('这个窗口不支持语音输入，可以按 / 打字', 'Voice input is not available in this window. Press / to type')); cmd.focus(); }
+  function noVoice() { if (later() && voiceState === 'check') { hooks.needAI({ what: 'voice', text: '' }); return; }
+    toast(voiceState === 'check' ? T('语音还在准备，稍等一下', 'Voice is still getting ready. One moment') : T('这个窗口不支持语音输入，可以按 / 打字', 'Voice input is not available in this window. Press / to type')); cmd.focus(); }
   const voiceLang = () => (S.lang ? { language: S.lang } : undefined);
   function voiceErr(e) {
     const c = e && e.code; vMode = 'idle'; vHeld = false; vState = 'idle'; paintVoice(); if (c === 'stopped') return;
@@ -191,7 +192,8 @@
   $('live').onclick = () => { initAudio(); liveToggle(); };
 
   /* ---------- capabilities ---------- */
-  function setAI(s) { aiState = s; $('capAI').className = 'dot' + (s === 'on' || s === 'ready' ? ' on' : s === 'wait' ? ' warn' : ''); $('capAIT').textContent = T({ check: 'AI 检测中', ready: H.strings.aiReady ? H.strings.aiReady[0] : 'AI 可用（第一次会请你授权）', wait: '等待你授权…', on: 'AI 已就绪', denied: 'AI 未授权，只能用当场生效的指令', none: 'AI 未连接：登录 Claude 才能玩' }[s], { check: 'Checking the AI', ready: H.strings.aiReady ? H.strings.aiReady[1] : 'AI available (it asks your permission the first time)', wait: 'Waiting for your permission…', on: 'AI ready', denied: 'AI not allowed: only instant commands work', none: 'AI not connected: sign in to Claude to play' }[s]); gateCheck(); }
+  function later() { return aiState === 'later' && !M.sample; } // the visitor came in without the AI, and the home of the page has a way to get it (host.access)
+  function setAI(s) { aiState = s; $('capAI').className = 'dot' + (s === 'on' || s === 'ready' ? ' on' : s === 'wait' || s === 'later' ? ' warn' : ''); $('capAIT').textContent = T({ later: H.strings.aiLater ? H.strings.aiLater[0] : 'AI 还没有接上，只能用当场生效的指令', check: 'AI 检测中', ready: H.strings.aiReady ? H.strings.aiReady[0] : 'AI 可用（第一次会请你授权）', wait: '等待你授权…', on: 'AI 已就绪', denied: 'AI 未授权，只能用当场生效的指令', none: 'AI 未连接：登录 Claude 才能玩' }[s], { later: H.strings.aiLater ? H.strings.aiLater[1] : 'No AI yet: only instant commands work', check: 'Checking the AI', ready: H.strings.aiReady ? H.strings.aiReady[1] : 'AI available (it asks your permission the first time)', wait: 'Waiting for your permission…', on: 'AI ready', denied: 'AI not allowed: only instant commands work', none: 'AI not connected: sign in to Claude to play' }[s]); gateCheck(); }
   /* ---------- the sign-in gate ----------
      Everything said here is built by the host's AI on the viewer's own account. A viewer the page cannot reach that AI for (signed out, or a window
      that cannot use it) is told what to do, in the host's words (host.gate), and the world does not take input until then. An AI arriving later lifts it. */
@@ -211,15 +213,18 @@
     }
     document.body.classList.add('gated'); try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) {} try { if (dict && typeof dict.stop === 'function') dict.stop().catch(() => {}); } catch (e) {} try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
   }
-  { const set0 = M.setSample; M.setSample = function (fn) { set0(fn); if (fn && aiState === 'none') setAI('ready'); }; }
+  { const set0 = M.setSample; M.setSample = function (fn) { set0(fn); if (fn && (aiState === 'none' || aiState === 'later')) { setAI('ready'); buildChips(); } }; }
+  /* a home that lets visitors in before they have the AI says so (hooks.aiLater), and is asked for it when something said needs it (host.access.open) */
+  hooks.aiLater = () => { if (!M.sample) { setAI('later'); buildChips(); } };
+  hooks.needAI = (q) => { if (H.access && typeof H.access.open === 'function') try { H.access.open(q || {}); } catch (e) { console.warn(e); } };
   function setVoice(s) { voiceState = s; $('capVoice').className = 'dot' + (s === 'ready' ? ' on' : ''); $('capVoiceT').textContent = T({ check: '语音检测中', ready: '语音可用（第一次会请你授权）', none: '这个窗口不支持语音，可以打字' }[s], { check: 'Checking voice', ready: 'Voice available (it asks your permission the first time)', none: 'No voice input in this window: type instead' }[s]); paintVoice(); }
   function warm() {
     if (!M.sample || warmed) return; warmed = true; setAI('wait');
     M.sample(T('只回复两个字：就绪', 'Reply with just: ok'), { modelTier: 'quick' }).then(() => setAI('on'), (e) => { const c = e && e.code; if (c === 'not_granted') { setAI('denied'); M.setSample(null); } else if (['sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed'].includes(c)) { setAI('none'); M.setSample(null); } else setAI('on'); });
   }
   // the AI, the voice and the saving of files come from wherever the page lives (host.js)
-  H.ai.then((s) => { if (typeof s === 'function') { M.setSample(s); setAI('ready'); if (started) warm(); } else setAI('none'); });
-  H.voice.then((d) => { if (d && typeof d.start === 'function') { dict = d; try { wireDict(); } catch (e) { console.warn(e); } setVoice('ready'); } else setVoice('none'); });
+  H.ai.then((s) => { if (typeof s === 'function') { M.setSample(s); setAI('ready'); buildChips(); if (started) warm(); } else setAI('none'); });
+  H.voice.then((d) => { if (d && typeof d.start === 'function') { dict = d; try { wireDict(); } catch (e) { console.warn(e); } setVoice('ready'); try { paintAll(); } catch (e) {} } else setVoice('none'); });
   H.save.then((d) => { dl = d && typeof d.save === 'function' ? d : null; });
 
   /* ---------- intro ---------- */
