@@ -1,0 +1,21 @@
+const look = async (c, tgt) => { const dx = tgt[0] - c[0], dy = tgt[1] - c[1], dz = tgt[2] - c[2]; YX.setPose({ x: c[0], y: c[1], z: c[2], yaw: Math.atan2(-dx, -dz), pitch: Math.atan2(dy, Math.hypot(dx, dz)) }); W.player.fly = c[1] > 2; step(0.05); await wait(120); step(0.05); return W.aim ? W.aim.type + '#' + W.aim.id : 'nothing'; };
+const D = YX.director, h = byType('house')[0], fr = [Math.sin(h.rot), Math.cos(h.rot)];
+const cam = [h.x + fr[0] * 9, 1.7, h.z + fr[1] * 9];
+const st = () => { const L = D.last; if (!L) return 'no last'; const c = [h.x, 0, h.z], r = L.kp.keys.map((k) => Math.hypot(k.pos[0] - c[0], k.pos[2] - c[2])), y = L.kp.keys.map((k) => k.pos[1]); return 'R ' + Math.min(...r).toFixed(1) + '..' + Math.max(...r).toFixed(1) + ' y ' + Math.min(...y).toFixed(1) + '..' + Math.max(...y).toFixed(1) + ' dur ' + L.kp.dur.toFixed(1) + ' lens ' + L.kp.lens + ' shots ' + W.shots.length + ' take ' + (W.shots[W.shots.length - 1].take || []).length + ' by ' + L.by; };
+out.push('aim ' + await look(cam, [h.x, 2, h.z]));
+out.push(await say('orbit this house', undefined, 900)); step(1); out.push(st());
+out.push(await say('too close')); out.push(st());
+out.push(await say('a bit farther from the house')); out.push(st());
+out.push(await say('higher')); out.push(st());
+out.push(await say('the other way')); out.push(st());
+out.push(await say('slower')); out.push(st());
+out.push(await say('太近了')); out.push(st());
+out.push(await say('低一点')); out.push(st());
+out.push(await say('make the camera 20 meters away')); out.push(st());
+out.push(await say('wider lens')); out.push(st());
+const card = document.getElementById('shotPlan'); out.push('card: opacity ' + card.style.opacity + ' pe ' + card.style.pointerEvents + ' buttons ' + card.querySelectorAll('button').length);
+card.querySelectorAll('button')[1].click(); step(0.3); await wait(200); step(0.3); out.push('clicked Closer -> ' + lastLog() + ' | ' + st());
+// not a shot note: something else happened in between
+out.push(await say('add a tree here')); out.push(await say('higher') + '   (must not touch the shot) ' + st());
+out.push(await say('move the camera farther') + ' ' + st());
+return out.join('\n');

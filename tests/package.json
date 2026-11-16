@@ -1,0 +1,7 @@
+{
+  "name": "spoken-world-tests",
+  "private": true,
+  "description": "Scenario tests for Spoken World: scripts that run inside the page under Playwright",
+  "scripts": { "test": "node run.js" },
+  "dependencies": { "playwright": "^1.48.0", "three": "0.128.0" }
+}

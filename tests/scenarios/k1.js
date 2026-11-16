@@ -1,0 +1,15 @@
+const W = YX.world, w = (ms) => new Promise((r) => setTimeout(r, ms)), o = [], key = (code) => window.dispatchEvent(new KeyboardEvent('keydown', { code, key: code.replace('Key', '').toLowerCase(), bubbles: true }));
+const open = () => document.querySelector('#director').classList.contains('on');
+document.querySelector('#go').click(); await w(600);
+const n0 = W.shots.length; key('KeyC'); await w(100); o.push('C once: panel=' + open() + ' shots ' + n0 + '→' + W.shots.length);
+key('KeyC'); await w(100); o.push('C again: panel=' + open() + ' shots=' + W.shots.length);
+YX.saveShot('test view'); await w(400); YX.hooks.ui(); await w(100); o.push('a shot exists, panel closed, repaint: panel=' + open() + ' shots=' + W.shots.length);
+const P = W.player, p0 = [P.x, P.z].join(); W.player.x += 9; const p1 = [P.x, P.z].join(); key('Digit1'); await w(100); o.push('1 with panel closed: moved=' + ([P.x, P.z].join() !== p1));
+key('KeyR'); await w(300); o.push('R with panel closed: recording=' + YX.recording() + ' film=' + YX.filmBusy());
+const l0 = P.lens; key('KeyL'); await w(50); o.push('L with panel closed: lens ' + l0 + '→' + P.lens);
+key('KeyP'); await w(200); o.push('P with panel closed: playing=' + !!YX.playing);
+key('KeyC'); await w(100); key('Digit1'); await w(100); o.push('panel open, 1: moved=' + ([P.x, P.z].join() !== p1) + ' card="' + document.querySelector('#shotList .scard .d').textContent + '" icon=' + document.querySelector('#shotList .scard .pl').textContent);
+key('KeyL'); await w(50); o.push('panel open, L: lens=' + P.lens); P.lens = 0;
+document.querySelector('#sClear').click(); await w(50); o.push('clear 1st click: "' + document.querySelector('#sClear').textContent + '" shots=' + W.shots.length); document.querySelector('#sClear').click(); await w(50); o.push('clear 2nd click: shots=' + W.shots.length + ' label="' + document.querySelector('#sClear').textContent + '"');
+key('KeyX'); await w(100); o.push('X: clean=' + document.body.classList.contains('clean') + ' toast="' + (document.querySelector('#toasts').lastChild || {}).textContent + '"'); key('KeyX');
+return o.join('\n');

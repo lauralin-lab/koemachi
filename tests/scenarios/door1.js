@@ -1,0 +1,13 @@
+const pose = async (c, tgt) => { const dx = tgt[0] - c[0], dy = tgt[1] - c[1], dz = tgt[2] - c[2]; YX.setPose({ x: c[0], y: c[1], z: c[2], yaw: Math.atan2(-dx, -dz), pitch: Math.atan2(dy, Math.hypot(dx, dz)) }); W.player.fly = false; step(0.5); await wait(150); step(0.5); };
+const h = byType('house')[0], fr = [Math.sin(h.rot), Math.cos(h.rot)], sp = YX.spaceOf(h), door = YX.spaceSpot(h, sp.doorX, sp.hz), back = YX.spaceSpot(h, sp.doorX - 1.4, -sp.hz + 1.0);
+(await say('set the time to 14:00'));
+const hinge = () => h.anims.filter((a) => a.spec.hinge).map((a) => (a.k || 0).toFixed(2)).join(',');
+out.push('hinges on the house: ' + h.anims.filter((a) => a.spec.hinge).length + ' k=' + hinge());
+const MODE = window.__mode || 'out';
+if (MODE === 'in') { await pose([back[0], 1.9, back[1]], [door[0], 1.3, door[1]]); } else await pose([door[0] + fr[0] * 6.5 + fr[1] * 2.2, 1.6, door[1] + fr[1] * 6.5 - fr[0] * 2.2], [door[0], 1.3, door[1]]);
+out.push('shut: k=' + hinge());
+out.push(await say('a person walks out of this house')); const tr = []; for (let i = 0; i < 4; i++) { step(0.45); tr.push(hinge()); } out.push('while he comes out: ' + tr.join(' '));
+YX.three.renderer.setPixelRatio(1); if (YX.resize) YX.resize(); fake += 40; YX.frame(fake); await wait(300); fake += 40; YX.frame(fake);
+const url = YX.three.renderer.domElement.toDataURL('image/jpeg', 0.85);
+YX.three.renderer.setPixelRatio(0.3); step(5); out.push('5 s later: k=' + hinge());
+return out.join('\n') + '\n@@' + url;

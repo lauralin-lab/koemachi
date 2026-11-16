@@ -1,0 +1,13 @@
+const rig = YX.rig, ex = (op) => { const r = YX.exec(op, YX.newCtx(YX.viewNow())); return (r && r.msg) || JSON.stringify(r); };
+const bus = byType('bus').find((o) => o.motion === 'drive') || byType('car').find((o) => o.motion === 'drive'); step(2);
+const desc = () => rig.cams.map((c) => { const s = bus, hx = Math.sin(s.rot) * (s.ms && s.ms.v < 0 ? -1 : 1), hz = Math.cos(s.rot) * (s.ms && s.ms.v < 0 ? -1 : 1), dx = c.cam.position.x - s.x, dz = c.cam.position.z - s.z, along = dx * hx + dz * hz, side = dx * hz - dz * hx; return c.A.key + ' ' + c.A.en + ' az ' + Math.round((Math.atan2(side, along) * 180) / Math.PI) + '° dist ' + Math.hypot(dx, dz).toFixed(1) + ' h ' + (c.cam.position.y - s.y).toFixed(1) + ' fov ' + c.cam.fov.toFixed(0) + (c.track ? ' travels' : ' stands'); }).join(' | ');
+out.push('subject ' + bus.type + '#' + bus.id + ' speed ' + ((bus.ms && bus.ms.v) || 0).toFixed(1));
+out.push(ex({ op: 'rig', target: '#' + bus.id, angles: ['close', 'top', 'front'] })); out.push('  ' + desc());
+out.push(ex({ op: 'rig', target: '#' + bus.id, cams: [{ name: 'wheel', az: 100, dist: 2.4, height: 0.4, lens: 24, look: 'wheels', travel: true }, { name: 'driver', kind: 'close', az: 20, lens: 85 }, { name: 'kerb', az: -90, dist: 9, height: 1.6, lens: 35, travel: false }] })); out.push('  ' + desc());
+const p0 = rig.cams.map((c) => c.cam.position.clone()), b0 = [bus.x, bus.z]; step(2);
+out.push('  2 s on: bus moved ' + Math.hypot(bus.x - b0[0], bus.z - b0[1]).toFixed(1) + ' m; cameras moved ' + rig.cams.map((c, i) => c.A.en + ' ' + c.cam.position.distanceTo(p0[i]).toFixed(1)).join(', '));
+out.push(ex({ op: 'rig', target: '#' + bus.id, cams: [{ name: 'only one', az: 180, dist: 6, height: 2 }] })); out.push('  ' + desc() + ' | hud frames shown ' + Array.from(document.querySelectorAll('#rigHud .frame')).filter((f) => f.style.display !== 'none').length);
+const h = byType('house')[0]; out.push(ex({ op: 'rig', target: '#' + h.id, cams: [{ kind: 'top' }, { name: 'door', az: 0, dist: 7, height: 1.5, lens: 50, look: 0.2 }] })); out.push('  cams ' + rig.cams.map((c) => c.A.key + ' ' + c.A.en + (c.track ? ' travels' : ' stands')).join(' | '));
+const pr = byType('person').find((o) => !o.attach); YX.setPose({ x: pr.x + 4, y: 1.7, z: pr.z + 4, yaw: 0, pitch: 0 }); step(0.2);
+out.push(ex({ op: 'rig', here: true, follow: '#' + pr.id })); const c0 = rig.cams[rig.cams.length - 1]; const q0 = c0.cam.quaternion.clone(); pr.x += 3; YX.syncHolder(pr); step(0.3); out.push('  the hand-placed camera turned with them: ' + (c0.cam.quaternion.angleTo(q0) > 0.05) + ' ; cams ' + rig.cams.map((c) => c.A.key + ' ' + c.A.en).join(' | '));
+return out.join('\n');
