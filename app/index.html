@@ -283,7 +283,7 @@ html[lang^="zh"] .brand b { font-size: 14px; letter-spacing: .34em; }
 .tband { position: relative; background: #05070a; display: flex; align-items: center; padding: 0 clamp(16px, 3vw, 40px); transition: transform .7s cubic-bezier(.7, 0, .2, 1); }
 .tband.top { min-height: clamp(40px, 9vh, 84px); justify-content: space-between; gap: 18px; font: 500 10.5px/1 var(--f-mono); letter-spacing: .16em; text-transform: uppercase; color: var(--paper-dim); }
 .tband.bot { min-height: clamp(86px, 15vh, 132px); flex-direction: column; justify-content: center; gap: 10px; padding-top: 14px; padding-bottom: 14px; }
-.tlang { display: flex; gap: 2px; align-items: center; } .tlang a { padding: 6px 8px; margin-right: 8px; border-radius: 4px; color: var(--paper-dim); text-decoration: none; } .tlang a:hover { color: var(--paper); } a.tbtn { text-decoration: none; } .tlang button { background: none; border: 0; padding: 6px 8px; border-radius: 4px; font: inherit; letter-spacing: inherit; color: var(--paper-dim); } .tlang button:hover { color: var(--paper); } .tlang button[aria-pressed="true"] { color: var(--voice); }
+.tlang { display: flex; gap: 2px; align-items: center; } .tlang a { padding: 6px 8px; border-radius: 4px; color: var(--paper-dim); text-decoration: none; } .tlang a:hover { color: var(--paper); } a.tbtn { text-decoration: none; } .tlang button { background: none; border: 0; padding: 6px 8px; border-radius: 4px; font: inherit; letter-spacing: inherit; color: var(--paper-dim); } .tlang button:hover { color: var(--paper); } .tlang button[aria-pressed="true"] { color: var(--voice); }
 .tmain { position: relative; display: grid; grid-template-rows: minmax(0, 1fr) auto; justify-items: center; min-height: 0; padding: 0 20px; text-align: center; transition: opacity .45s; }
 .thero { align-self: center; display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2.2vh, 20px); }
 .twave { display: flex; align-items: center; gap: 5px; height: clamp(22px, 4vh, 34px); color: var(--voice); }
@@ -464,7 +464,7 @@ body.cinema #top, body.cinema #bar, body.cinema #log, body.cinema #director, bod
 </div>
 
 <div id="intro">
-  <div class="tband top"><span id="tEnv"></span><span class="tlang" id="tLang"><a href="https://github.com/ryannli/spoken-world" target="_blank" rel="noopener" title="The source code, on GitHub" data-ia="title:tSrc">GitHub ↗</a><button type="button" data-tui="en">EN</button><button type="button" data-tui="zh">中文</button></span></div>
+  <div class="tband top"><span id="tEnv"></span><span class="tlang" id="tLang"><a href="https://github.com/ryannli/spoken-world" target="_blank" rel="noopener" title="The source code, on GitHub" data-ia="title:tSrc">GitHub ↗</a></span></div>
   <div class="tmain">
     <div class="thero">
       <div class="twave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>

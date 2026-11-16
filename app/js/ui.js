@@ -357,7 +357,7 @@
     const k = YX.lang === 'zh' ? 0 : 1; document.documentElement.lang = k ? 'en' : 'zh-CN';
     for (const el of document.querySelectorAll('[data-i]')) { const t = TXT[el.dataset.i]; if (t) el.innerHTML = t[k]; }
     for (const el of document.querySelectorAll('[data-ia]')) for (const pair of el.dataset.ia.split(';')) { const a = pair.split(':'), t = TXT[a[1]]; if (t) el.setAttribute(a[0], t[k].replace(/&amp;/g, '&')); }
-    buildChips(); if (!started) titleLine(true); for (const b of $('tLang').children) b.setAttribute('aria-pressed', String(b.dataset.tui === S.ui)); setAI(aiState); setVoice(voiceState); sugg = M.suggest(); cmd.placeholder = (dict ? T('按住空格说话，或打字：', 'Hold Space to talk, or type: ') : T('打字：', 'Type: ')) + sugg;
+    buildChips(); if (!started) titleLine(true); for (const b of $('tLang').children) if (b.dataset.tui) b.setAttribute('aria-pressed', String(b.dataset.tui === S.ui)); setAI(aiState); setVoice(voiceState); sugg = M.suggest(); cmd.placeholder = (dict ? T('按住空格说话，或打字：', 'Hold Space to talk, or type: ') : T('打字：', 'Type: ')) + sugg;
     paintAll(); if ($('outliner').classList.contains('on')) paintOutliner(); frameN = 31;
   }
 

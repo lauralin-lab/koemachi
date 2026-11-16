@@ -245,8 +245,8 @@
     $q('.sub').textContent = T('你说的每句话都由 Gemini 现场搭建，用的是你自己的 key。', 'Everything you say is built by Gemini, on your own key.');
     $q('input[type=password]').placeholder = T('粘贴 key', 'Paste your key'); $q('button').textContent = T('开始', 'Start'); $q('.rl').textContent = T('在这台设备上记住', 'Remember on this device'); $q('.meta a').textContent = T('去拿一个 key ↗', 'Get a key ↗');
     $q('.b1').textContent = T('世界和居民', 'World & people'); $q('.m1').textContent = 'Gemini 4 Hydrogen';
-    $q('.b2').textContent = T('语音', 'Voice'); $q('.m2').textContent = 'Transcribe Live';
-    $q('.b3').textContent = T('转成实拍', 'Make it real'); $q('.m3').textContent = T('Omni · 点了才用', 'Omni · on request');
+    $q('.b2').textContent = T('语音', 'Voice'); $q('.m2').textContent = 'Gemini Transcribe Live';
+    $q('.b3').textContent = T('转成实拍', 'Make it real'); $q('.m3').textContent = T('Gemini Omni · 点了才用', 'Gemini Omni · on request');
     $q('summary').textContent = T('这个 key 会怎么用', 'How your key is used');
     $q('.d1').textContent = T('key 只留在这个浏览器里，只发给 Google 的 Gemini API，不经过我们的服务器；费用由 Google 记在你的账号上，其中“转成实拍”最贵，只在你点它时才会用。建议专门建一个 key，并在 Google Cloud 里设好预算上限。代码是公开的（github.com/ryannli/spoken-world），你可以自己读、自己部署。' + (COUNTED ? '这个官方页面只统计访问次数（页面浏览、来源、国家、设备，不用 cookie），你说的话、你造的世界和你的 key 都不会被统计。' : ''), 'It stays in this browser and goes only to Google’s Gemini API, never to a server of ours. Google bills the usage to your account; Make it real is the costly part and runs only when you press it. Best to make a separate key for this and set a budget cap in Google Cloud. The code is public (github.com/ryannli/spoken-world): you can read it and run your own copy.' + (COUNTED ? ' This official page counts visits only (page views, referrer, country, device; no cookies): nothing you say, nothing you build and never your key.' : ''));
     $q('.kerr').textContent = err || '';
