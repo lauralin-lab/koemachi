@@ -1,26 +1,50 @@
-# Spoken World
+<h1 align="center">Spoken World</h1>
 
-A real-time 3D world you change by talking to it.
+<p align="center"><b>A real-time 3D world you change by talking to it.</b></p>
+
+<p align="center">
+  <a href="https://spoken-world.vercel.app"><b>Try it</b></a> &nbsp;·&nbsp;
+  <a href="#ways-to-run-it">Run it yourself</a> &nbsp;·&nbsp;
+  <a href="#cost">Cost</a> &nbsp;·&nbsp;
+  <a href="ARCHITECTURE.md">How it is built</a>
+</p>
+
+<p align="center"><img src="docs/cover.jpg" alt="Spoken World: say it, and the world changes" width="860"></p>
+
+<table>
+  <tr>
+    <td width="33%" align="center" valign="top">
+      <img src="docs/say-it.gif" alt="A bus becomes a double-decker when asked" width="100%"><br>
+      <b>Say it</b><br>
+      <sub>"Make it a double-decker."</sub>
+    </td>
+    <td width="33%" align="center" valign="top">
+      <img src="docs/build-it.gif" alt="A fountain is rebuilt from a spoken description" width="100%"><br>
+      <b>Ask for what does not exist</b><br>
+      <sub>"Make this fountain grander: three marble tiers, four bronze horses, and a ring of jets."</sub>
+    </td>
+    <td width="33%" align="center" valign="top">
+      <img src="docs/film-it.gif" alt="Three cameras film a bus; the clip becomes live-action footage" width="100%"><br>
+      <b>Film it, then make it real</b><br>
+      <sub>"Film the bus with three cameras… now turn them into reality."</sub>
+    </td>
+  </tr>
+</table>
+
+<p align="center"><sub>Cut from a film recorded in the real interface. Captions were added in the edit; where the model's wait is shortened, the corner of the picture says so; the last clip ends in footage a video model made from the recording.</sub></p>
+
+## What it is
 
 Point at something, hold Space and say what you want: "make this house taller", "put a café across the street",
 "a person walks out of this house", "orbit this house… farther… record it". It happens in front of you.
-Things that are not in the catalog are written on the spot by the model ("add a sleepy boar"). People in the
-world can be clicked and spoken with. Shots can be directed by voice, recorded, and turned into
-live-action footage by a video model.
 
-![Spoken World](docs/cover.jpg)
+- **Anything in the catalog** is changed at once by a local grammar, with no model call.
+- **Anything that is not** ("add a sleepy boar") is written on the spot by the model as a small program.
+- **People** in the world can be clicked and spoken with.
+- **Shots** are directed by voice, corrected by voice, recorded, and turned into live-action footage by a video model.
 
-| Say it | Ask for something that does not exist | Film it, then make it real |
-| --- | --- | --- |
-| ![A bus becomes a double-decker when asked](docs/say-it.gif) | ![A fountain is rebuilt from a spoken description](docs/build-it.gif) | ![Three cameras film a bus; the clip becomes live-action footage](docs/film-it.gif) |
-| "Make it a double-decker." | "Make this fountain grander: three marble tiers, four bronze horses, and a ring of jets." The model writes the new fountain; the wait is shortened here and labelled in the corner. | "Film the bus with three cameras… now turn them into reality." The second half is footage a video model made from the recorded clip. |
-
-These are cut from a film recorded in the real interface. The captions were added in the edit.
-
-**Try it:** https://spoken-world.vercel.app (you bring your own Gemini API key; see [Cost](#cost))
-
-> Everything interesting here is done by a model, so there is no mode without one. Either you give the page
-> a Gemini API key, or you run it as a Claude artifact on your own Claude account.
+Everything interesting here is done by a model, so there is no mode without one: either you give the page a
+Gemini API key, or you run it as a Claude artifact on your own Claude account.
 
 ## Ways to run it
 

@@ -185,7 +185,7 @@
     showPlan(title, take, raw, obs, tg, dur);
     const run = (done) => { YX.setPose(first); YX.cineStart({ type: 'take', samples: take, dur, onDone: (fin) => { hideCard(D.last ? 16000 : 2600); if (done) done(fin); } }); return true; };
     YX.lastMoveAt = performance.now();
-    if (rec && YX.filmRun && YX.filmRun(dur, run)) return { sh, rec: true };
+    if (rec && YX.filmRun && YX.filmRun(dur, run, title)) return { sh, rec: true };
     run(null); if (hooks.ui) hooks.ui(); return { sh, rec: false };
   }
   function build(keysPlan, tg, f) { // keyframes -> checked path -> samples

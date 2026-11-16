@@ -47,8 +47,10 @@
   const planned = () => W.shots.reduce((a, s) => a + YX.shotDur(s), 0);
   YX.filmLive = () => !!mr && (mode === 'live' || mode === 'move');
   function hud() { if (!mr) return; const s = (performance.now() - t0) / 1000; cine.textContent = 'REC ' + fmt(s) + ' / ' + fmt(cap) + (mode === 'live' ? T(' · 按 R 或 Esc 结束', ' · R or Esc to finish') : T(' · Esc 结束', ' · Esc to finish')); }
+  let recTitle = null; // what the clip being recorded is a recording of: the name of the shot, or nothing for a take by hand
   function start(m, move) {
     if (mr) return stop();
+    recTitle = m === 'shots' ? T('全部镜头', 'All shots') : (move && move.title) || null;
     if (!canvas.captureStream || typeof MediaRecorder === 'undefined') return U.toast(T('这个浏览器不支持录制', 'This browser cannot record'));
     if (m === 'shots' && !W.shots.length) return U.toast(T('还没有机位。先存一个，或者用“实时录制”', 'No shots yet. Save one first, or use “Record live”'));
     if (YX.playing) return;
@@ -78,12 +80,12 @@
   }
   let lastSecs = 0;
   YX.filmStop = stop;
-  YX.filmRun = function (dur, run) { if (mr || YX.playing) return false; return start('move', { dur: Math.min(LIMIT, Math.max(1, +dur || 8)), run }) === true; }; // record while something flies the camera
+  YX.filmRun = function (dur, run, title) { if (mr || YX.playing) return false; return start('move', { dur: Math.min(LIMIT, Math.max(1, +dur || 8)), run, title: title || null }) === true; }; // record while something flies the camera
   YX.filmLiveStart = function () { if (mr || YX.playing) return false; return start('live') === true; };
-  YX.filmShot = function (i) { const s = W.shots[i]; if (!s || mr || YX.playing) return false; return YX.filmRun(YX.shotDur(s), (done) => YX.playShot(i, done)); };
+  YX.filmShot = function (i) { const s = W.shots[i]; if (!s || mr || YX.playing) return false; return YX.filmRun(YX.shotDur(s), (done) => YX.playShot(i, done), s.name); };
   YX.filmBusy = () => !!mr;
   /* a camera move and its recording as one action: "orbit this house and record it" */
-  YX.filmMove = function (m, tg, op) { if (mr || YX.playing) return false; return start('move', { dur: +op.dur || 8, run: (done) => YX.startMove(m, tg, op, done) }) || YX.startMove(m, tg, op); };
+  YX.filmMove = function (m, tg, op) { if (mr || YX.playing) return false; return start('move', { dur: +op.dur || 8, title: op.title || null, run: (done) => YX.startMove(m, tg, op, done) }) || YX.startMove(m, tg, op); };
   YX.filmLast = function () {
     let s = null; for (let i = W.shots.length - 1; i >= 0 && !s; i--) if (W.shots[i].move) s = W.shots[i];
     if (!s || mr || YX.playing) return false;
@@ -97,7 +99,7 @@
     const blob = new Blob(chunks, { type }); chunks = [];
     if (!blob.size) { paint(); return U.toast(T('没有录到画面', 'Nothing was recorded')); }
     const d = new Date(), p2 = (v) => String(v).padStart(2, '0'), stem = 'spoken-world-previz-' + p2(d.getHours()) + p2(d.getMinutes()) + p2(d.getSeconds()), ext = type === 'video/mp4' ? '.mp4' : '.webm';
-    clip = { blob, url: URL.createObjectURL(blob), name: stem + ext, secs: lastSecs, scene: sceneAtRec, stem, type, tiles: 1 };
+    clip = { blob, url: URL.createObjectURL(blob), name: stem + ext, secs: lastSecs, scene: sceneAtRec, stem, type, tiles: 1, title: recTitle };
     clips.unshift(clip); while (clips.length > 8) { const old = clips.pop(); try { URL.revokeObjectURL(old.url); } catch (e) {} }
     U.togglePanel('director', 'bDir', true); paint(); showClip(clip); // the film is on screen the moment it exists
     if (U.canSave()) saveClip(clip);
@@ -115,7 +117,7 @@
     if (!clips.length) { const e = document.createElement('div'); e.className = 'empty'; e.textContent = T('录好的片子会出现在这里，并立刻打开播放。', 'What you record appears here and opens straight away.'); L.appendChild(e); return; }
     clips.forEach((c, i) => { const d = document.createElement('div'); d.className = 'scard'; d.innerHTML = '<button class="th" type="button"><video muted playsinline preload="metadata"></video><span class="pl">▶</span><span class="d"></span></button><div class="meta"><span class="nm"></span><button class="mini" type="button">⤓</button></div>';
       const th = d.children[0], v = th.children[0]; v.src = c.url + '#t=0.1'; th.children[2].textContent = c.secs.toFixed(1) + 's'; th.title = T('播放', 'Play'); th.onclick = () => showClip(c);
-      d.children[1].children[0].textContent = T('片子 ', 'Clip ') + (clips.length - i); const dl = d.children[1].children[1]; dl.title = T('再保存一次', 'Save again'); dl.onclick = () => saveClip(c); L.appendChild(d); });
+      { const nm = d.children[1].children[0]; nm.textContent = c.title || (c.tiles > 1 ? T(c.tiles + ' 个机位', c.tiles + ' cameras') : T('手持录制 ', 'By hand ') + (clips.length - i)); nm.title = c.title ? T('镜头“' + c.title + '”录成的视频', 'Video recorded from the shot “' + c.title + '”') : c.tiles > 1 ? T('固定机位同时录的视频', 'Video recorded by the standing cameras') : T('你自己走位时录的视频', 'Video recorded while you moved the camera yourself'); } const dl = d.children[1].children[1]; dl.title = T('再保存一次', 'Save again'); dl.onclick = () => saveClip(c); L.appendChild(d); });
   }
   function paint() {
     const rec = !!mr, sv = $('sVid'), sl = $('sLive'); if (!sv) return; paintClips();

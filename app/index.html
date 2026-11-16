@@ -283,7 +283,7 @@ html[lang^="zh"] .brand b { font-size: 14px; letter-spacing: .34em; }
 .tband { position: relative; background: #05070a; display: flex; align-items: center; padding: 0 clamp(16px, 3vw, 40px); transition: transform .7s cubic-bezier(.7, 0, .2, 1); }
 .tband.top { min-height: clamp(40px, 9vh, 84px); justify-content: space-between; gap: 18px; font: 500 10.5px/1 var(--f-mono); letter-spacing: .16em; text-transform: uppercase; color: var(--paper-dim); }
 .tband.bot { min-height: clamp(86px, 15vh, 132px); flex-direction: column; justify-content: center; gap: 10px; padding-top: 14px; padding-bottom: 14px; }
-.tlang { display: flex; gap: 2px; } .tlang button { background: none; border: 0; padding: 6px 8px; border-radius: 4px; font: inherit; letter-spacing: inherit; color: var(--paper-dim); } .tlang button:hover { color: var(--paper); } .tlang button[aria-pressed="true"] { color: var(--voice); }
+.tlang { display: flex; gap: 2px; align-items: center; } .tlang a { padding: 6px 8px; margin-right: 8px; border-radius: 4px; color: var(--paper-dim); text-decoration: none; } .tlang a:hover { color: var(--paper); } a.tbtn { text-decoration: none; } .tlang button { background: none; border: 0; padding: 6px 8px; border-radius: 4px; font: inherit; letter-spacing: inherit; color: var(--paper-dim); } .tlang button:hover { color: var(--paper); } .tlang button[aria-pressed="true"] { color: var(--voice); }
 .tmain { position: relative; display: grid; grid-template-rows: minmax(0, 1fr) auto; justify-items: center; min-height: 0; padding: 0 20px; text-align: center; transition: opacity .45s; }
 .thero { align-self: center; display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2.2vh, 20px); }
 .twave { display: flex; align-items: center; gap: 5px; height: clamp(22px, 4vh, 34px); color: var(--voice); }
@@ -386,6 +386,7 @@ body.cinema #top, body.cinema #bar, body.cinema #log, body.cinema #director, bod
     <button class="tbtn glass" id="bOut" type="button" aria-pressed="false" data-i="bOut">Outline <kbd>O</kbd></button>
     <button class="tbtn glass" id="bSet" type="button" aria-pressed="false" data-i="bSet">Settings</button>
     <button class="tbtn glass" id="bHelp" type="button" aria-pressed="false" data-i="bHelp">Keys <kbd>H</kbd></button>
+    <a class="tbtn glass" id="bSrc" href="https://github.com/ryannli/spoken-world" target="_blank" rel="noopener" title="The source code, on GitHub" data-ia="title:tSrc">GitHub ↗</a>
   </nav>
 </header>
 
@@ -404,10 +405,11 @@ body.cinema #top, body.cinema #bar, body.cinema #log, body.cinema #director, bod
   <p class="fhint" data-i="f1s">Say a move (“orbit this house”) → say what to change (“farther”, “start from the left”) → say “record it”.</p>
   <div class="row" id="moveRow"><button class="sbtn" type="button" data-mv="orbit" data-i="mvOrbit">Orbit</button><button class="sbtn" type="button" data-mv="push" data-i="mvPush">Push in</button><button class="sbtn" type="button" data-mv="pull" data-i="mvPull">Pull out</button><button class="sbtn" type="button" data-mv="street" data-i="mvStreet">Street</button><button class="sbtn" type="button" data-mv="crane" data-i="mvCrane">Crane up</button><button class="sbtn" type="button" data-mv="reveal" data-i="mvReveal">Reveal</button><button class="sbtn" type="button" data-mv="flyover" data-i="mvFly">Flyover</button><button class="sbtn" type="button" data-mv="follow" data-i="mvFollow">Follow</button><button class="sbtn rec" id="mvRec" type="button" aria-pressed="false" data-i="mvRec">● Record the move too</button></div>
   <div class="fhead"><b data-i="fShots">Shots</b><span id="fDur"></span><span class="sp"></span><button class="sbtn sm" id="sClear" type="button" data-i="sClear">Clear</button><button class="sbtn sm" id="sPlay" type="button" data-i="sPlay">▶ Play all</button><button class="sbtn sm rec" id="sVid" type="button" aria-pressed="false" data-i="sVid">● Film all</button></div>
+  <p class="fhint" data-i="fShotsS">Plans for the camera, not video yet. ● records one as a clip.</p>
   <div id="shotList" class="fgrid"></div>
   <button class="sbtn wide" id="sSave" type="button" data-i="sSave">＋ Save this view as a shot</button>
   <div class="fhead"><b data-i="fClips">Clips</b></div>
-  <p class="fhint" data-i="fClipsS">Click a clip to watch it. Real footage is made outside this page, then dropped in to compare.</p>
+  <p class="fhint" data-i="fClipsS">Recorded video. Click one to watch it. Real footage is made outside this page, then dropped in to compare.</p>
   <div id="clipList" class="fgrid"></div>
   <details id="fMore"><summary data-i="fMore">More tools</summary>
     <div class="row" id="lensRow" role="group" aria-label="Lens" data-ia="aria-label:aLens">
@@ -462,7 +464,7 @@ body.cinema #top, body.cinema #bar, body.cinema #log, body.cinema #director, bod
 </div>
 
 <div id="intro">
-  <div class="tband top"><span id="tEnv"></span><span class="tlang" id="tLang"><button type="button" data-tui="en">EN</button><button type="button" data-tui="zh">中文</button></span></div>
+  <div class="tband top"><span id="tEnv"></span><span class="tlang" id="tLang"><a href="https://github.com/ryannli/spoken-world" target="_blank" rel="noopener" title="The source code, on GitHub" data-ia="title:tSrc">GitHub ↗</a><button type="button" data-tui="en">EN</button><button type="button" data-tui="zh">中文</button></span></div>
   <div class="tmain">
     <div class="thero">
       <div class="twave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>

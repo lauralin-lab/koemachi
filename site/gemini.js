@@ -206,7 +206,7 @@
 
   /* ---------- the host, as app/js/host.js expects it ---------- */
   const canVoice = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.WebSocket && window.AudioWorkletNode);
-  const CLIPS = 'Click a clip to watch it, then press Make it real.', DROP = 'Press Make it real, or drop footage you made elsewhere.';
+  const CLIPS = 'Recorded video. Click one to watch it, then press Make it real.', DROP = 'Press Make it real, or drop footage you made elsewhere.';
   window.SW_HOST = {
     name: 'gemini',
     ai: keyReady.then(() => sample),
@@ -216,7 +216,7 @@
     gate: null, // access is the key dialog below
     strings: {
       aiReady: ['AI 可用（Gemini）', 'AI available (Gemini)'],
-      fClipsS: ['点开一段片子，再点“转成实拍”。', CLIPS],
+      fClipsS: ['录好的视频。点开一段来看，再点“转成实拍”。', CLIPS],
       cmpB2: ['点“转成实拍”，或者把别处做好的实拍视频拖到这里。', DROP],
       cmpBT: ['Gemini Omni', 'Gemini Omni'],
     },
