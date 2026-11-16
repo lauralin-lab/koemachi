@@ -10,6 +10,13 @@ live-action footage by a video model.
 
 ![Spoken World](docs/cover.jpg)
 
+| Say it | Ask for something that does not exist | Film it, then make it real |
+| --- | --- | --- |
+| ![A bus becomes a double-decker when asked](docs/say-it.gif) | ![A fountain is rebuilt from a spoken description](docs/build-it.gif) | ![Three cameras film a bus; the clip becomes live-action footage](docs/film-it.gif) |
+| "Make it a double-decker." | "Make this fountain grander: three marble tiers, four bronze horses, and a ring of jets." The model writes the new fountain; the wait is shortened here and labelled in the corner. | "Film the bus with three cameras… now turn them into reality." The second half is footage a video model made from the recorded clip. |
+
+These are cut from a film recorded in the real interface. The captions were added in the edit.
+
 **Try it:** https://spoken-world.vercel.app (you bring your own Gemini API key; see [Cost](#cost))
 
 > Everything interesting here is done by a model, so there is no mode without one. Either you give the page

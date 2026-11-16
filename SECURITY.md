@@ -20,7 +20,10 @@ Recommended: create a key for this purpose alone, with a spending limit, and del
 - To Google: your commands (as text or as microphone audio while you hold Space), the description of the scene the model
   needs to act on them, and, for "Make it real", the clip you recorded.
 - To cdnjs: the request for Three.js.
-- Nothing else. The page has no analytics. If that ever changes it will be stated here and in the key dialog first.
+- To Vercel, on the official hosted page only (`spoken-world.vercel.app`): a page-view count through Vercel Web Analytics
+  (the page URL, referrer, country, device and browser; no cookies, no identifier that follows you). Nothing you say,
+  nothing you build and never your key. A copy you run or deploy yourself does not load it (`countVisits` in `site/gemini.js`).
+- Nothing else.
 
 ## Generated code
 

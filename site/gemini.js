@@ -19,6 +19,7 @@
   const SK = 'sw.gemini.key';
   const zh = (() => { try { const p = JSON.parse(localStorage.getItem('yanchu.prefs.v2') || '{}'); if (p.ui === 'zh' || p.ui === 'en') return p.ui === 'zh'; } catch (e) {} return /^zh/i.test(navigator.language || ''); })();
   const T = (a, b) => (zh ? a : b);
+  const COUNTED = location.hostname === 'spoken-world.vercel.app'; // the one place visits are counted (see countVisits)
 
   /* ---------- the key ---------- */
   let key = '';
@@ -247,7 +248,7 @@
     $q('.b2').textContent = T('语音', 'Voice'); $q('.m2').textContent = 'Transcribe Live';
     $q('.b3').textContent = T('转成实拍', 'Make it real'); $q('.m3').textContent = T('Omni · 点了才用', 'Omni · on request');
     $q('summary').textContent = T('这个 key 会怎么用', 'How your key is used');
-    $q('.d1').textContent = T('key 只留在这个浏览器里，只发给 Google 的 Gemini API，不经过我们的服务器；费用由 Google 记在你的账号上，其中“转成实拍”最贵，只在你点它时才会用。建议专门建一个 key，并在 Google Cloud 里设好预算上限。代码目前还没有公开，公开后你可以自己读、自己部署。', 'It stays in this browser and goes only to Google’s Gemini API, never to a server of ours. Google bills the usage to your account; Make it real is the costly part and runs only when you press it. Best to make a separate key for this and set a budget cap in Google Cloud. The code is not public yet; once it is, you can read it and run your own copy.');
+    $q('.d1').textContent = T('key 只留在这个浏览器里，只发给 Google 的 Gemini API，不经过我们的服务器；费用由 Google 记在你的账号上，其中“转成实拍”最贵，只在你点它时才会用。建议专门建一个 key，并在 Google Cloud 里设好预算上限。代码目前还没有公开，公开后你可以自己读、自己部署。' + (COUNTED ? '这个官方页面只统计访问次数（页面浏览、来源、国家、设备，不用 cookie），你说的话、你造的世界和你的 key 都不会被统计。' : ''), 'It stays in this browser and goes only to Google’s Gemini API, never to a server of ours. Google bills the usage to your account; Make it real is the costly part and runs only when you press it. Best to make a separate key for this and set a budget cap in Google Cloud. The code is not public yet; once it is, you can read it and run your own copy.' + (COUNTED ? ' This official page counts visits only (page views, referrer, country, device; no cookies): nothing you say, nothing you build and never your key.' : ''));
     $q('.kerr').textContent = err || '';
     const inp = $q('input[type=password]'), btn = $q('button'), rem = $q('.rem');
     $q('form').onsubmit = async (e) => {
@@ -279,6 +280,13 @@
   }
   /* a tab left open keeps running the page it loaded. Every so often it asks the server which build is there now; when that is a newer one it says so,
      so nobody goes on testing yesterday's page. The build is also written small in the corner: a screenshot then shows which page it is of. */
+  /* visits to the official hosted page are counted with Vercel Web Analytics: page views only, no cookies, nothing about what is said or built.
+     A copy you run or deploy yourself does not load it. Said in the key dialog and in SECURITY.md. */
+  function countVisits() {
+    if (!COUNTED) return;
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    const s = document.createElement('script'); s.defer = true; s.src = '/_vercel/insights/script.js'; document.head.appendChild(s);
+  }
   function buildWatch() {
     const mine = window.SW_BUILD; if (!mine) return;
     const tag = document.createElement('div'); tag.id = 'swBuild'; tag.textContent = 'build ' + mine; tag.style.cssText = 'position:fixed;right:8px;bottom:4px;z-index:3;font:500 9.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.04em;color:#fff;opacity:.34;pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,.6)'; document.body.appendChild(tag);
@@ -288,7 +296,7 @@
   }
   const boot = () => {
     if (!key) { if (local) localKey().then((ok) => { if (!ok) askKey(); }); else askKey(); }
-    keyChip(); buildWatch();
+    keyChip(); buildWatch(); countVisits();
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
