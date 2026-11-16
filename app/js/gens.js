@@ -344,10 +344,10 @@
     params: { length: { d: 60, min: 6, max: 800 }, width: { d: 9, min: 3, max: 40 }, sidewalk: { d: true, bool: 1 } },
     dims: { width: 'width', depth: 'width', size: 'length', height: 'width' }, foot: (p) => [p.length, p.width],
     build(b, p) {
-      const L = p.length, W = p.width, SW = p.sidewalk ? 2.6 : 0, cuts = (p._cuts || []).slice().sort((a, c) => a.t - c.t);
+      const L = p.length, W = p.width, SW = p.sidewalk ? 2.6 : 0, KW = 0.2, cuts = (p._cuts || []).slice().sort((a, c) => a.t - c.t);
       const spans = (gapOf) => { const out = []; let a = -L / 2; for (const c of cuts) { const g = gapOf(c); if (g == null) continue; const s = c.t - g, e = c.t + g; if (s > a) out.push([a, Math.min(s, L / 2)]); a = Math.max(a, e); } if (a < L / 2) out.push([a, L / 2]); return out.filter((s) => s[1] - s[0] > 0.05); };
       for (const [s, e] of spans((c) => (c.own ? null : c.he))) b.box(e - s, 0.16, W, '#4b4e53', (s + e) / 2, -0.11, 0, { tex: 'asphalt' });
-      if (SW) for (const [s, e] of spans((c) => (c.own ? c.he : c.he + 2.6))) for (const sd of [-1, 1]) { b.box(e - s, 0.2, SW, '#cdc8bd', (s + e) / 2, -0.04, sd * (W / 2 + SW / 2), { tex: 'pave' }); b.box(e - s, 0.21, 0.16, '#a39e94', (s + e) / 2, -0.03, sd * (W / 2 + 0.08)); }
+      if (SW) for (const [s, e] of spans((c) => (c.own ? c.he : c.he + 2.6))) for (const sd of [-1, 1]) { b.box(e - s, 0.2, SW - KW, '#cdc8bd', (s + e) / 2, -0.04, sd * (W / 2 + KW + (SW - KW) / 2), { tex: 'pave' }); b.box(e - s, 0.24, KW, '#a39e94', (s + e) / 2, -0.04, sd * (W / 2 + KW / 2)); } // the kerb stands beside the paving, not inside it: two boxes sharing a face flicker against each other from any distance
       const blocked = (t) => cuts.some((c) => Math.abs(t - c.t) < c.he + 4.2);
       if (W >= 5) for (let t = -L / 2 + 2; t < L / 2 - 2; t += 6) if (!blocked(t)) b.box(2.6, 0.02, 0.16, '#e9e3c9', t, 0.05, 0, { noShadow: true });
       for (const c of cuts) for (const sd of [-1, 1]) { const tz = c.t + sd * (c.he + 1.5); if (Math.abs(tz) > L / 2 - 1.2) continue; for (let z = -W / 2 + 0.7; z <= W / 2 - 0.7; z += 1.0) b.box(2.3, 0.02, 0.5, '#efefe6', tz, 0.05, z, { noShadow: true }); }
