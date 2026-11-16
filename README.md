@@ -9,7 +9,7 @@ A real-time 3D world you shape by talking to it, running in your browser.</p>
   <a href="#cost">Cost</a>
 </p>
 
-<p align="center"><img src="docs/hero.webp" alt="Five spoken requests, each changing the world as it is said: a house grows a floor, trees fill an empty field, a pond appears, ten houses appear, and the street turns to a rainy night" width="860"></p>
+<p align="center"><img src="docs/hero.webp" alt="The camera comes down over the town under the title Spoken World; then five spoken requests, each changing the world as it is said: a house grows a floor, trees fill an empty field, a pond appears, ten houses appear, and the street turns to a rainy night" width="860"></p>
 
 <p align="center"><sub>"Make this house taller." &nbsp;·&nbsp; "Add many trees here." &nbsp;·&nbsp; "Add a pond here." &nbsp;·&nbsp; "Add ten houses here." &nbsp;·&nbsp; "Make it a rainy night."</sub></p>
 
