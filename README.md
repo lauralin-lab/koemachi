@@ -9,9 +9,9 @@ A real-time 3D world you shape by talking to it, running in your browser.</p>
   <a href="#cost">Cost</a>
 </p>
 
-<p align="center"><img src="docs/hero.gif" alt="Spoken World: the camera comes down over the town; then, on the words Make it a rainy night, the street turns to night and rain" width="860"></p>
+<p align="center"><img src="docs/hero.webp" alt="Spoken World: the camera comes down over the town; on the words Make it a rainy night, the street turns to night and rain; then two recordings from the world wipe into the live-action footage a video model made from them" width="860"></p>
 
-<p align="center"><sub>"Make it a rainy night."</sub></p>
+<p align="center"><sub>"Make it a rainy night." Then two clips recorded in the world, each wiping into the footage a video model made from it.</sub></p>
 
 **You speak, and it is so.** Point at something, hold Space and say what you want. "Make this house taller."
 "Put a café across the street." "Make it a rainy night." "Add a sleepy boar." The world changes in front of you, while
