@@ -1,4 +1,4 @@
-<h1 align="center">Spoken World · 言出法随</h1>
+<h1 align="center">Spoken World</h1>
 
 <p align="center"><b>Say it, and the world changes.</b><br>
 A real-time 3D world you shape by talking to it, running in your browser.</p>
@@ -13,7 +13,7 @@ A real-time 3D world you shape by talking to it, running in your browser.</p>
 
 <p align="center"><sub>"Make it a rainy night."</sub></p>
 
-**言出法随: you speak, and it is so.** Point at something, hold Space and say what you want. "Make this house taller."
+**You speak, and it is so.** Point at something, hold Space and say what you want. "Make this house taller."
 "Put a café across the street." "Make it a rainy night." "Add a sleepy boar." The world changes in front of you, while
 you are still standing in it. People who live there can be clicked and spoken with.
 
