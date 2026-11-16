@@ -9,7 +9,9 @@
   <a href="ARCHITECTURE.md">How it is built</a>
 </p>
 
-<p align="center"><img src="docs/cover.jpg" alt="Spoken World: say it, and the world changes" width="860"></p>
+<p align="center"><img src="docs/hero.gif" alt="An empty meadow fills with trees when asked; then the town turns to a rainy night" width="860"></p>
+
+<p align="center"><sub>"Add many trees here." &nbsp;…&nbsp; "Make it a rainy night."</sub></p>
 
 <table>
   <tr>
@@ -32,6 +34,13 @@
 </table>
 
 <p align="center"><sub>Cut from a film recorded in the real interface. Captions were added in the edit; where the model's wait is shortened, the corner of the picture says so; the last clip ends in footage a video model made from the recording.</sub></p>
+
+## From a 3D sketch to footage
+
+<p align="center"><img src="docs/previz-real.jpg" alt="Four shots recorded in Spoken World, and the live-action footage a video model made from each" width="100%"></p>
+
+Top row: frames of clips recorded in the world. Bottom row: the same moment of the footage a video model made from each
+clip, keeping the camera move and where everything stands. The page comes with these pairs to play side by side.
 
 ## What it is
 
@@ -103,6 +112,30 @@ The page calls Gemini with your key, so Google bills you. Measured in November 2
 "Make it real" runs only when you press it. The page shows what each call used in `SW_HOST.usage` (browser console).
 
 ## How it is built
+
+A sentence takes the shortest path that can carry it out:
+
+```mermaid
+flowchart LR
+  V([You speak or type]) --> G{Does the local<br/>grammar know it?}
+  G -- "yes · instant" --> O[Operations<br/>add, set, move, walk, cam ...]
+  G -- no --> M[The model answers<br/>with operations · 2-4 s]
+  M --> O
+  M -- "a thing that does not exist" --> W[The model writes a generator<br/>run in a Web Worker · about 30 s]
+  W --> O
+  O --> X[(The world)]
+```
+
+Filming is the same idea in three steps: a shot is a plan, a clip is a recording, footage is what a video model makes of it.
+
+```mermaid
+flowchart LR
+  A([Orbit this house]) --> S[Shot<br/>a plan for the camera]
+  S -- "farther, slower, start from the left" --> S
+  S -- "record it" --> C[Clip<br/>recorded video]
+  H([Move the camera yourself]) -- record --> C
+  C -- "Make it real" --> R[Live-action footage]
+```
 
 Plain JavaScript modules and one HTML file; Three.js r128 from a CDN; no framework, no bundler.
 [ARCHITECTURE.md](ARCHITECTURE.md) walks through the layers. In short:
