@@ -1,5 +1,30 @@
 # Spoken World: how it is put together, and where to extend it
 
+A sentence takes the shortest path that can carry it out:
+
+```mermaid
+flowchart LR
+  V([You speak or type]) --> G{Does the local<br/>grammar know it?}
+  G -- "yes · instant" --> O[Operations<br/>add, set, move, walk, cam ...]
+  G -- no --> M[The model answers<br/>with operations · 2-4 s]
+  M --> O
+  M -- "a thing that does not exist" --> W[The model writes a generator<br/>run in a Web Worker · about 30 s]
+  W --> O
+  O --> X[(The world)]
+```
+
+Filming is the same idea in three steps: a shot is a plan, a clip is a recording, footage is what a video model makes of it.
+
+```mermaid
+flowchart LR
+  A([Orbit this house]) --> S[Shot<br/>a plan for the camera]
+  S -- "farther, slower, start from the left" --> S
+  S -- "record it" --> C[Clip<br/>recorded video]
+  H([Move the camera yourself]) -- record --> C
+  C -- "Make it real" --> R[Live-action footage]
+```
+
+
 One page, no build step for the product itself. `app/` is the page; it runs as a Claude artifact as it is, and as an open-web site
 (`site/`, Gemini) with one extra file in front. Scripts load in the order below; each layer only knows the ones above it.
 

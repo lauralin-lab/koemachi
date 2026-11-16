@@ -1,17 +1,29 @@
-<h1 align="center">Spoken World</h1>
+<h1 align="center">Spoken World · 言出法随</h1>
 
-<p align="center"><b>A real-time 3D world you change by talking to it.</b></p>
+<p align="center"><b>Say it, and the world changes.</b><br>
+A real-time 3D world you shape by talking to it, running in your browser.</p>
 
 <p align="center">
   <a href="https://spoken-world.vercel.app"><b>Try it</b></a> &nbsp;·&nbsp;
   <a href="#ways-to-run-it">Run it yourself</a> &nbsp;·&nbsp;
-  <a href="#cost">Cost</a> &nbsp;·&nbsp;
-  <a href="ARCHITECTURE.md">How it is built</a>
+  <a href="#cost">Cost</a>
 </p>
 
 <p align="center"><img src="docs/hero.gif" alt="Spoken World: the camera comes down over the town; then, on the words Make it a rainy night, the street turns to night and rain" width="860"></p>
 
 <p align="center"><sub>"Make it a rainy night."</sub></p>
+
+**言出法随: you speak, and it is so.** Point at something, hold Space and say what you want. "Make this house taller."
+"Put a café across the street." "Make it a rainy night." "Add a sleepy boar." The world changes in front of you, while
+you are still standing in it. People who live there can be clicked and spoken with.
+
+**An open world with no end, and a film set.** Wander and keep building: there is no list of things you are allowed to
+ask for, so the game never runs out. Or direct it: "orbit this house… farther… record it", put three cameras on a bus,
+have someone walk out of a door, then turn the clip you recorded into live-action footage.
+
+**All of it generated, all of it in the browser.** Every house, tree, bus and person is made by code, and anything that
+does not exist yet is written by a language model while you wait. It is drawn with Three.js and nothing else: no game
+engine, no model files, no install. Open a page and talk.
 
 <table>
   <tr>
@@ -42,20 +54,10 @@
 Top row: frames of clips recorded in the world. Bottom row: the same moment of the footage a video model made from each
 clip, keeping the camera move and where everything stands. The page comes with these pairs to play side by side.
 
-## What it is
-
-Point at something, hold Space and say what you want: "make this house taller", "put a café across the street",
-"a person walks out of this house", "orbit this house… farther… record it". It happens in front of you.
-
-- **Anything in the catalog** is changed at once by a local grammar, with no model call.
-- **Anything that is not** ("add a sleepy boar") is written on the spot by the model as a small program.
-- **People** in the world can be clicked and spoken with.
-- **Shots** are directed by voice, corrected by voice, recorded, and turned into live-action footage by a video model.
-
-Everything interesting here is done by a model, so there is no mode without one: either you give the page a
-Gemini API key, or you run it as a Claude artifact on your own Claude account.
-
 ## Ways to run it
+
+It needs a model to do any of this, so there is no mode without one: either you give the page a Gemini API key, or you
+run it as a Claude artifact on your own Claude account.
 
 ### 1. The hosted page, with your Gemini key
 
@@ -111,45 +113,9 @@ The page calls Gemini with your key, so Google bills you. Measured in November 2
 
 "Make it real" runs only when you press it. The page shows what each call used in `SW_HOST.usage` (browser console).
 
-## How it is built
+## For developers
 
-A sentence takes the shortest path that can carry it out:
-
-```mermaid
-flowchart LR
-  V([You speak or type]) --> G{Does the local<br/>grammar know it?}
-  G -- "yes · instant" --> O[Operations<br/>add, set, move, walk, cam ...]
-  G -- no --> M[The model answers<br/>with operations · 2-4 s]
-  M --> O
-  M -- "a thing that does not exist" --> W[The model writes a generator<br/>run in a Web Worker · about 30 s]
-  W --> O
-  O --> X[(The world)]
-```
-
-Filming is the same idea in three steps: a shot is a plan, a clip is a recording, footage is what a video model makes of it.
-
-```mermaid
-flowchart LR
-  A([Orbit this house]) --> S[Shot<br/>a plan for the camera]
-  S -- "farther, slower, start from the left" --> S
-  S -- "record it" --> C[Clip<br/>recorded video]
-  H([Move the camera yourself]) -- record --> C
-  C -- "Make it real" --> R[Live-action footage]
-```
-
-Plain JavaScript modules and one HTML file; Three.js r128 from a CDN; no framework, no bundler.
-[ARCHITECTURE.md](ARCHITECTURE.md) walks through the layers. In short:
-
-- `app/js/core.js`, `world.js`: parts, materials, objects, motion, pointing, saving.
-- `gens.js`, `gens2.js`: the catalog, each kind of thing as a procedural generator.
-- `mind.js`: a sentence becomes operations. Tier 0 is a local grammar (instant); tier 1 a model answering with operations; tier 2 writes new generators and plans whole places.
-- `ops.js`: the operations (`add`, `set`, `move`, `walk`, `route`, `invent`, ...).
-- `director.js`, `multicam.js`, `film.js`: camera moves designed for the place, standing cameras, recording, the 3D-to-real comparison.
-- `host.js`: where the model, the voice and the video come from. `site/gemini.js` is the Gemini host; the Claude artifact host is built in. A third host is one file.
-
-`site/build.mjs` copies `app/` to `site/dist` and loads the Gemini host first. That is the only difference between the two builds.
-
-## Tests
+How it works inside is written up in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 Scenario scripts that run inside the page under Playwright, with a stand-in for the model (no key, nothing billed):
 
