@@ -6,6 +6,10 @@
 (function () {
   'use strict';
   const ENDPOINT = '/__tinker/messages', MAX_TOKENS = 16384;
+  // how hard the model thinks (output_config.effort: low | medium | high | xhigh | max), by what the call is for: the page's task hint first, then its tier.
+  // window.SW_EFFORT forces one level for every call (used to measure them).
+  const EFFORT = { quick: 'low', default: 'low', complex: 'low', invent: 'low', check: 'low' };
+  const effortOf = (o) => window.SW_EFFORT || EFFORT[o.task] || EFFORT[o.modelTier] || 'low';
   const zh = (() => { try { const p = JSON.parse(localStorage.getItem('yanchu.prefs.v2') || '{}'); if (p.ui === 'zh' || p.ui === 'en') return p.ui === 'zh'; } catch (e) {} return /^zh/i.test(navigator.language || ''); })();
   const T = (a, b) => (zh ? a : b);
 
@@ -28,8 +32,8 @@
   }
   function sample1(input, opts, t0) {
     const msgs = []; // the Messages API wants roles to alternate, starting with the user
-    for (const m of typeof input === 'string' ? [{ role: 'user', content: input }] : input || []) { const role = m.role === 'assistant' ? 'assistant' : 'user', c = String(m.content); if (msgs.length && msgs[msgs.length - 1].role === role) msgs[msgs.length - 1].content += '\n\n' + c; else msgs.push({ role, content: c }); }
-    return run({ max_tokens: MAX_TOKENS, stream: true, messages: msgs }, opts, t0);
+    for (const m of typeof input === 'string' ? [{ role: 'user', content: input }] : input || []) { const role = m.role === 'assistant' ? 'assistant' : 'user', c = Array.isArray(m.content) ? m.content : String(m.content), last = msgs[msgs.length - 1]; if (last && last.role === role && typeof last.content === 'string' && typeof c === 'string') last.content += '\n\n' + c; else msgs.push({ role, content: c }); } // content may be a list of blocks (text and images), passed on as it is
+    return run({ max_tokens: MAX_TOKENS, stream: true, output_config: { effort: effortOf(opts) }, messages: msgs }, opts, t0);
   }
   async function run(body, opts, t0) {
     const r = await fetch(ENDPOINT, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), signal: opts.signal });
@@ -53,7 +57,7 @@
       while ((i = buf.indexOf('\n\n')) >= 0) { take(buf.slice(0, i)); buf = buf.slice(i + 2); }
     }
     if (buf.trim()) take(buf);
-    usage.push({ tier: opts.modelTier || 'default', model, in: u.in, cached: u.cached, out: u.out, thoughts: 0, ttft: Math.round(ttft), ms: Math.round(performance.now() - t0) });
+    usage.push({ tier: opts.modelTier || 'default', task: opts.task || '', label: opts.label || '', effort: body.output_config.effort, model, in: u.in, cached: u.cached, out: u.out, thoughts: 0, ttft: Math.round(ttft), ms: Math.round(performance.now() - t0) });
     return { text: tidy(text), truncated: stop === 'max_tokens', modelTierApplied: model };
   }
 

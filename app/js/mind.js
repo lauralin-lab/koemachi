@@ -1006,7 +1006,10 @@
     'rand() returns a deterministic random number in 0..1; p is the parameter object; Math is available.',
   ].join('\n');
   const EXAMPLE = (label) => '//@meta {"name":"lantern_tower","label":"' + label + '","size":[2.4,6,2.4],"motion":"none","params":{"height":{"d":6,"min":2,"max":30},"color":{"d":"#c8553d"},"lanterns":{"d":4,"min":1,"max":12,"int":true}},"dims":{"height":"height"}}\nconst H = p.height, k = H / 6;\nb.cyl(0.9*k, 1.1*k, 0.4*k, "#8f8a82", 0, 0, 0, {sides: 8, tex: "stone"});\nb.cyl(0.16*k, 0.22*k, H*0.86, "#5d4031", 0, 0.4*k, 0, {sides: 8});\nb.cone(1.2*k, 0.7*k, p.color, 0, H*0.9, 0, {sides: 8, flat: true});\nb.sphere(0.12*k, "#d9b45a", 0, H*0.9 + 0.78*k, 0, {metal: 0.7, rough: 0.3});\nfor (let i = 0; i < p.lanterns; i++) { const a = i / p.lanterns * Math.PI * 2, y = H*0.78 - (i % 2) * 0.5*k;\n  b.group({x: Math.cos(a)*0.85*k, y: y, z: Math.sin(a)*0.85*k, anim: {swing: {axis: "x", deg: 6, freq: 0.5, phase: i}}}, () => {\n    b.cyl(0.01, 0.01, 0.3*k, "#333333", 0, -0.02, 0);\n    b.sphere(0.2*k, p.color, 0, -0.5*k, 0, {sy: 1.2, glow: "#ffb060"});\n    b.cyl(0.08*k, 0.08*k, 0.05*k, "#d9b45a", 0, -0.3*k, 0); });\n}\nb.anchor("top", 0, H*0.9 + 0.9*k, 0);';
-  function inventPrompt(job, draft, error) {
+  function inventPrompt(job, draft, error, look) { // look: what a visual check of the previous version (the draft) found wrong
+    return inventPrompt0(job, draft, error) + (look ? '\n\n## A visual check of the previous version found problems\nA render of the draft was compared with the request. Problems: ' + look.problems.join('; ') + '.\nWhat to change: ' + look.fix + '\nFix exactly these problems and keep everything that was already right: the name, the parameter keys and the overall design.' : '');
+  }
+  function inventPrompt0(job, draft, error) {
     const sz = job.size;
     if (YX.lang === 'en') return 'You are writing a procedural generator for a real-time 3D world engine: a piece of JavaScript that assembles an object from parts with the builder b.\n\nObject: ' + job.label + ' (identifier ' + job.name + ')\nDescription: ' + job.brief + '\nApproximate size in metres: width ' + sz[0] + ', height ' + sz[1] + ', depth ' + sz[2] + '; motion: ' + job.motion + (job.repNote ? '\n' + job.repNote : '') + '\n\n## Output format\nOutput code only: no explanation, no ``` fences. The first line must be a one-line metadata comment, followed by the function body (available variables: b, p, rand, Math):\n//@meta {"name":"' + job.name + '","label":"' + job.label + '","size":[w,h,d],"motion":"' + job.motion + '","params":{"paramName":{"d":default,"min":min,"max":max}, "color":{"d":"#hex"}},"dims":{"height":"the parameter that is the height","size":"the parameter that is the overall size"}}\n\n## Builder API\n' + API_DOC_EN + '\n\n## Requirements\n- Use 30 to 140 parts to make something recognisable at a glance, with detail: good proportions, a harmonious palette (3 to 5 main colours with lighter and darker shades) and small details (windows, doors, handles, rivets, stripes, trim). Not just a few boxes.\n- Derive every dimension from the parameters in p so the whole thing follows when a parameter changes; give 2 to 5 meaningful parameters, one of them the main colour "color".\n- Moving parts go in b.group({anim:…}) with the joint at the group origin. Animals and vehicles face +Z.\n- One statement per line; write the main masses first, then the details (the code is executed for preview while it is still being written).\n- Never let faces of different parts lie in the same plane (they flicker): windows, doors and trim stand at least 3 cm proud of the wall or are sunk into it; roofs and floor slabs overhang the walls or sit inside them, never flush with the wall tops.\n- No while loops; for loops must total fewer than 300 iterations; never touch window/document/self/fetch.\n- When motion is fly/hover/drift the origin is the centre of the object (it floats); otherwise the origin is on the ground at the base.\n\n## Example\n' + EXAMPLE('Lantern tower') + (draft ? '\n\n## This is a draft version\nWrite a clearly finer, better-looking version: keep the name and the parameter keys in //@meta (you may add parameters), fix proportions and anything unnatural, and add layers of detail.\n' + draft : '') + (error ? '\n\n## The previous code failed when it ran\nError: ' + error + '\nFix it and output the complete code again.' : '');
     return '你在为一个实时 3D 世界引擎写“程序化生成器”：一段 JavaScript，用构建器 b 把零件拼成物体。\n\n目标物体：' + job.label + '（英文名 ' + job.name + '）\n描述：' + job.brief + '\n大致尺寸（米）：宽 ' + sz[0] + '，高 ' + sz[1] + '，深 ' + sz[2] + '；运动方式：' + job.motion + (job.repNote ? '\n' + job.repNote : '') + '\n\n## 输出格式\n只输出代码，不要解释，不要 ``` 围栏。第一行必须是一行元数据注释，之后是函数体（可用变量 b, p, rand, Math）：\n//@meta {"name":"' + job.name + '","label":"' + job.label + '","size":[宽,高,深],"motion":"' + job.motion + '","params":{"参数名":{"d":默认值,"min":最小,"max":最大}, "color":{"d":"#hex"}},"dims":{"height":"对应高度的参数名","size":"对应整体大小的参数名"}}\n\n## 构建器 API\n' + API_DOC_ZH + '\n\n## 要求\n- 用 30~140 个零件拼出一眼能认出来、有细节的造型：比例协调，配色和谐（3~5 种主色加深浅变化），带小细节（窗、门、把手、铆钉、条纹、装饰）。不要只是几个方块。\n- 所有尺寸都从 p 的参数推导，改参数时整体会跟着变；给 2~5 个有意义的参数，其中一个主色 color。\n- 会动的部分用 b.group({anim:…})，关节放在 group 的原点。动物和车辆正面朝 +Z。\n- 每条语句写在一行内；先写主体大形，再加细节（代码是边写边执行预览的）。\n- 不同零件的面不要落在同一个平面上（会闪烁）：贴在墙上的窗、门、装饰要凸出或嵌入至少 3 厘米；屋顶和楼板要压过墙体或缩进去，不要和墙顶齐平。\n- 不要 while 循环，for 循环总次数 < 300；不要访问 window/document/self/fetch。\n- motion 为 fly/hover/drift 时原点是物体中心（悬空），否则原点在底部贴地。\n\n## 示例\n' + EXAMPLE('灯笼塔') + (draft ? '\n\n## 这是一个草稿版本\n请写一个明显更精细、更好看的版本：保持 //@meta 里的 name 和 params 键名不变（可以新增参数），修正比例和不自然的地方，增加细节层次。\n' + draft : '') + (error ? '\n\n## 上一次的代码运行出错\n错误：' + error + '\n请修正后重新输出完整代码。' : '');
@@ -1055,11 +1058,47 @@
       lastTry = t; busy = true;
       YX.tryCode(closed, defaultsOf(metaSeen || { params: {} }), job.seed, 1200).then((parts) => { busy = false; if (job.repIds) { const n = countParts(parts.root); for (const id of job.repIds) { const x = W.objs.get(id); if (x && x.wk) x.wk.set(workText(job, n)); } } else showPreview(W.objs.get(job.phId), parts); }, () => { busy = false; });
     } : undefined;
-    const res = await M.sample(inventPrompt(job, opt.draft, opt.error), { modelTier: tier, cache: false, signal: job.ctl.signal, onText });
+    const res = await M.sample(inventPrompt(job, opt.draft, opt.error, opt.look), { modelTier: tier, task: 'invent', label: opt.label, cache: false, signal: job.ctl.signal, onText });
     job.entry.model = (job.entry.model ? job.entry.model + ' + ' : '') + (res.modelTierApplied || tier);
     return splitCode(res.text);
   }
   async function validate(sc, job) { const meta = Object.assign({ name: job.name, label: job.label, size: job.size, motion: job.motion }, sc.meta || {}); meta.name = job.name; if (job.repIds) meta.motion = job.motion; if (!sc.code || sc.code.length < 20) throw new Error(T('没有生成代码', 'no code came back')); const parts = await YX.tryCode(sc.code, defaultsOf(meta), job.seed, 2500); if (!parts.root.ch.length) throw new Error(T('生成器没有产生任何零件', 'the generator made no parts')); return meta; }
+  /* Look & Fix: a new kind of object is rendered alone and shown to the model with the request; if it does not match, the code is revised with
+     what was wrong and rebuilt (the old look dissolves over the new one), and looked at again. At most YX.lookFix.rounds rounds. */
+  function swapFade(xs, rebuild) {
+    const ghosts = [];
+    for (const x of xs) { if (!x.mesh || !x.holder) continue; const g = x.mesh.clone(true); g.traverse((c) => { if (c.material) { const f = (m) => { const k = m.clone(); k.transparent = true; k.depthWrite = false; return k; }; c.material = Array.isArray(c.material) ? c.material.map(f) : f(c.material); } }); ghosts.push([x, g]); }
+    rebuild();
+    for (const [x, g] of ghosts) { x.holder.add(g); YX.tween(0.5, (k) => g.traverse((c) => { if (c.material) for (const m of [].concat(c.material)) m.opacity = 1 - k; }), { done: () => { x.holder.remove(g); g.traverse((c) => { if (c.material) for (const m of [].concat(c.material)) m.dispose(); }); } }); }
+  }
+  async function lookFixRun(job, type, code, o) {
+    const LF = YX.lookFix; if (!LF || !LF.enabled || !M.sample || o.dead) return;
+    const ask = ((job.entry && job.entry.text) ? job.entry.text + ' — ' : '') + job.label + ': ' + job.brief, st = LF.status(job.label), stamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14), base = stamp + '-' + type.replace(/[^\w]/g, '_').slice(0, 24);
+    const live = () => Array.from(W.objs.values()).filter((x) => x.type === type && !x.dead), saved = [], fixedWhat = []; LF.busy++;
+    try {
+      st.say(T('检查中…', 'Checking…')); await new Promise((ok) => setTimeout(ok, 1300)); // the new object has finished appearing
+      if (o.dead) return st.end('', '');
+      let res = await LF.check(o, ask, 0), cur = code;
+      for (let r = 1; !res.match && r <= LF.rounds; r++) {
+        st.say(T('修正中…（第 ' + r + ' 轮）', 'Fixing… (round ' + r + ')'), 'fix'); const before = res;
+        const sc = await genCode(job, 'default', { preview: false, draft: cur.slice(0, 9000), look: res, label: 'look-fix r' + r });
+        const meta = await validate(sc, job), m2 = Object.assign({}, meta, { name: type }), xs = live(); if (!xs.length) return st.end('', '');
+        YX.registerCustom(m2, sc.code); cur = sc.code;
+        swapFade(xs, () => { for (const x of xs) { x.params = YX.fillParams(G[type], x.params, null, null); YX.rebuild(x, {}); } });
+        for (const p of before.problems) if (!fixedWhat.includes(p)) fixedWhat.push(p);
+        st.say(T('再看一遍…', 'Checking again…'));
+        await new Promise((ok) => setTimeout(ok, 700)); // the new look is in, then looked at
+        const o2 = live()[0]; if (!o2) return st.end('', '');
+        res = await LF.check(o2, ask, r);
+        saved.push({ round: r, problems: before.problems, fix: before.fix, before: base + '-r' + r + '-before.jpg', after: base + '-r' + r + '-after.jpg', match: res.match, afterProblems: res.problems });
+        LF.save(base + '-r' + r + '-before.jpg', before.shot.b64); LF.save(base + '-r' + r + '-after.jpg', res.shot.b64);
+      }
+      if (saved.length) LF.save(base + '.json', JSON.stringify({ type, label: job.label, ask, rounds: saved }, null, 1), true);
+      if (res.match) st.end(saved.length ? T('已修正：' + fixedWhat.join('，'), 'Fixed: ' + fixedWhat.join(', ')) : T('看起来没问题', 'Looks right'), saved.length ? 'fix' : 'ok');
+      else st.end(T('还有问题：' + res.problems.join('，'), 'Still off: ' + res.problems.join(', ')), 'fix');
+    } catch (e) { console.warn('look & fix', e); st.end(T('没能检查', 'Could not check'), ''); }
+    finally { LF.busy--; }
+  }
   let inventRunning = 0; const waiters = [];
   function slot() { if (inventRunning < 2) { inventRunning++; return Promise.resolve(); } return new Promise((r) => waiters.push(r)); }
   function release() { const w = waiters.shift(); if (w) w(); else inventRunning--; }
@@ -1081,7 +1120,7 @@
       }
       const made = () => (job.repIds ? T('重造完成 ', 'Rebuilt as ') : T('造好了 ', 'Built ')) + (o ? YX.lab(o) : job.label);
       entry.msgs = [made()]; entry.first = Math.round(now() - entry.t0); logUp(entry);
-      if (q === 'refine' || q === 'max') {
+      if (q === 'max') { // the blind second draft; at the default setting the object is looked at instead (lookFixRun)
         entry.msgs.push(T('正在精修…', 'Refining…')); logUp(entry);
         const marks = []; for (const x of W.objs.values()) if (x.type === type && !x.wk) { try { marks.push(YX.fx.work(x, T('精修中…', 'Refining…'))); } catch (e) {} } // the first version stands, visibly still being worked on
         try { const sc2 = await genCode(job, q === 'max' ? 'complex' : 'default', { preview: false, draft: sc.code.slice(0, 9000) }); const meta2 = await validate(sc2, job); const m2 = Object.assign({}, meta2, { name: type }); YX.registerCustom(m2, sc2.code); for (const x of W.objs.values()) if (x.type === type) { x.params = YX.fillParams(G[type], x.params, null, null); YX.rebuild(x, { grow: true }); YX.fx.flash(x, 0xffffff, 1); } YX.sfx('born'); entry.msgs = [made() + T('（已精修）', ' (refined)')]; }
@@ -1089,6 +1128,7 @@
         for (const mk of marks) { try { mk.stop(); } catch (e) {} }
       }
       logEnd(entry, 'ok');
+      if (o && !job.noLook) lookFixRun(job, type, sc.code, o); // not awaited: the object is already on screen and the world stays playable
     } catch (e) {
       endWork(job);
       const o = W.objs.get(job.phId); if (o && o.type === '__pending') YX.removeObj(o, { animate: true });

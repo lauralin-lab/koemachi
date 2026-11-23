@@ -64,6 +64,15 @@ The page sends its model calls to the local server (`/__tinker/messages`), which
 ([how it is handled](SECURITY.md)). Hold Space to talk; press `/` to type instead.
 Each model call's latency and token counts are in `SW_HOST.usage` (browser console).
 
+### Look & Fix
+
+After the model builds a new kind of object, the page renders it alone from a temporary camera and shows the picture to the model together
+with your request. If the model names a problem ("wheels were floating"), the code is revised and the object is rebuilt with a short
+dissolve, then looked at again: at most 2 fix rounds. A small note in the bottom-right corner says "Checking…", then "Looks right" or
+"Fixed: …". The world stays playable the whole time. Every fix round's before/after pictures are kept in `data/lookfix/` (git-ignored),
+and each check or fix call is a labelled entry in `SW_HOST.usage` (`look-check r0`, `look-fix r1`, …). Thinking effort is set per kind of
+call in `site/tinker.js` (`EFFORT`); everything runs at `low`, the fastest setting that gave correct results in testing.
+
 ## For developers
 
 How it works inside is written up in [ARCHITECTURE.md](ARCHITECTURE.md).

@@ -19,6 +19,16 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
 const HOSTS = new Set(['localhost:' + PORT, '127.0.0.1:' + PORT, '[::1]:' + PORT]);
 const sameOrigin = (q) => { const site = q.headers['sec-fetch-site'], host = String(q.headers.host || '').toLowerCase(), o = q.headers.origin; return HOSTS.has(host) && (!site || site === 'same-origin') && (!o || o === 'http://' + host); }; // a page of this server, not another site or another name pointed at this machine
 const json = (r, code, obj) => { r.writeHead(code, { 'content-type': 'application/json', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' }); r.end(JSON.stringify(obj)); };
+const DATA = process.env.SW_DATA_DIR || path.join(__dirname, '..', 'data');
+async function keepShot(q, r) { // Look & Fix pictures and notes: written to data/lookfix/, under a plain file name
+  if (!sameOrigin(q)) return json(r, 403, { error: { message: 'forbidden' } });
+  let raw = ''; for await (const ch of q) { raw += ch; if (raw.length > 4e6) return json(r, 413, { error: { message: 'too large' } }); }
+  let b; try { b = JSON.parse(raw); } catch (e) { return json(r, 400, { error: { message: 'bad json' } }); }
+  if (!b || !/^[\w.-]{1,90}\.(jpg|json)$/.test(b.file || '')) return json(r, 400, { error: { message: 'bad file name' } });
+  const dir = path.join(DATA, 'lookfix'); fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, b.file), b.text != null ? String(b.text) : Buffer.from(String(b.data || ''), 'base64'));
+  json(r, 200, { ok: true });
+}
 async function tinkerProxy(q, r) { // the page's Messages request, with the key and the model filled in here, answered as the stream Tinker sends it
   if (!sameOrigin(q)) return json(r, 403, { error: { message: 'forbidden' } });
   const c = tinkerCfg(); if (!c.url || !c.key) return json(r, 500, { error: { type: 'not_configured', message: 'Set TINKER_BASE_URL and TINKER_API_KEY in .env, then restart the server.' } });
@@ -36,6 +46,7 @@ http.createServer((q, r) => {
   let p = decodeURIComponent(q.url.split('?')[0]);
   if (p === '/__config') { if (!sameOrigin(q)) return json(r, 403, {}); const c = tinkerCfg(); return json(r, 200, { model: c.model, ready: !!(c.url && c.key) }); } // never the key
   if (p === '/__tinker/messages' && q.method === 'POST') { tinkerProxy(q, r); return; }
+  if (p === '/__shot' && q.method === 'POST') { keepShot(q, r).catch(() => { if (!r.headersSent) json(r, 500, {}); }); return; }
   if (p === '/') p = '/index.html';
   const f = path.join(ROOT, p); if (!f.startsWith(ROOT + path.sep) || path.basename(f).startsWith('.') || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { r.writeHead(404); r.end('not found'); return; }
   const size = fs.statSync(f).size, type = TYPES[path.extname(f)] || 'application/octet-stream', m = /bytes=(\d+)-(\d*)/.exec(q.headers.range || '');

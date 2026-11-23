@@ -6,3 +6,4 @@ site/dist/
 *.log
 tests/_*.js
 tests/package-lock.json
+data/

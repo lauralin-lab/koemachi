@@ -18,10 +18,13 @@ b.anchor("top", 0, H*0.93, 0);`;
   async function stream(text, opt, cps) { let i = 0; while (i < text.length) { if (opt && opt.signal && opt.signal.aborted) throw { code: 'cancelled', message: 'x' }; i = Math.min(text.length, i + (cps || 60)); if (opt && opt.onText) opt.onText({ text: text.slice(0, i), delta: '' }); await sleep(40); } return { text, truncated: false, modelTierApplied: (opt && opt.modelTier) || 'default' }; }
   const calls = (window.__calls = []);
   const sample = async (input, opt) => {
-    const s = typeof input === 'string' ? input : input[input.length - 1].content; calls.push({ tier: opt && opt.modelTier, head: s.slice(0, 24), len: s.length });
+    const last = typeof input === 'string' ? input : input[input.length - 1].content, img = Array.isArray(last) ? last.find((b) => b.type === 'image') : null; // content may be text and image blocks
+    if (img) (window.__images = window.__images || []).push(img.source.data.length);
+    const s = Array.isArray(last) ? last.filter((b) => b.type === 'text').map((b) => b.text).join('\n') : last; calls.push({ tier: opt && opt.modelTier, head: s.slice(0, 24), len: s.length });
     await sleep(120);
     (window.__prompts = window.__prompts || []).push(s);
     if (s.startsWith('只回复') || /^Reply with/.test(s)) return stream('ok', opt);
+    if (s.startsWith('A player of a 3D world asked for')) return stream(JSON.stringify((window.__lookVerdicts && window.__lookVerdicts.length) ? window.__lookVerdicts.shift() : { match: true, problems: [], fix: '' }), opt); // Look & Fix: what the check says (tests queue verdicts in window.__lookVerdicts)
     if (s.includes('程序化生成器') || s.includes('procedural generator')) { if (window.__slowGen) await sleep(window.__slowGen); return stream(window.__badCode && !s.includes('运行出错') && !s.includes('failed when it ran') ? '//@meta {"name":"x"}\nb.box(1,1,1,"#fff"\n' : WINDMILL, opt, 90); }
     if (s.includes('布景师') || s.includes('set designer')) return stream(PLAN, opt, 80);
     const u = s.slice(Math.max(s.lastIndexOf('## 玩家说'), s.lastIndexOf('## The player says')));

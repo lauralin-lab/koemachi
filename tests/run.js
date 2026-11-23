@@ -13,7 +13,8 @@
 //
 // Environment: CHROME=/path/to/chrome to use an installed browser; VW, VH for the viewport.
 'use strict';
-const http = require('http'), fs = require('fs'), path = require('path'), cp = require('child_process');
+const http = require('http'), fs = require('fs'), os = require('os'), path = require('path'), cp = require('child_process');
+const DATA = fs.mkdtempSync(path.join(os.tmpdir(), 'sw-data-')); // what the page asks the server to keep (Look & Fix pictures) goes here, not into the repository
 const { chromium } = require('playwright');
 
 const here = __dirname;
@@ -23,7 +24,7 @@ const three = [path.join(here, 'node_modules/three/build/three.min.js')].find((f
 async function serveTinker() { // the real local server, in tinker mode, over a fresh build
   cp.execFileSync('node', [path.join(here, '..', 'site', 'build.mjs')], { stdio: 'ignore' });
   const port = await new Promise((res) => { const t = http.createServer().listen(0, '127.0.0.1', () => { const n = t.address().port; t.close(() => res(n)); }); });
-  const child = cp.spawn('node', [path.join(here, '..', 'site', 'serve.js')], { env: Object.assign({}, process.env, { PORT: String(port), TINKER_BASE_URL: 'http://127.0.0.1:9', TINKER_API_KEY: 'test-not-used', SW_ENV_FILE: '/nonexistent' }), stdio: 'ignore' });
+  const child = cp.spawn('node', [path.join(here, '..', 'site', 'serve.js')], { env: Object.assign({}, process.env, { PORT: String(port), TINKER_BASE_URL: 'http://127.0.0.1:9', TINKER_API_KEY: 'test-not-used', SW_ENV_FILE: '/nonexistent', SW_DATA_DIR: DATA }), stdio: 'ignore' });
   for (let i = 0; i < 50; i++) { try { await fetch('http://127.0.0.1:' + port + '/__config'); break; } catch (e) { await new Promise((r) => setTimeout(r, 100)); } }
   return { address: () => ({ port }), close: () => child.kill() };
 }
@@ -65,6 +66,7 @@ async function runOne(browser, port, name, shot) {
   const browser = await chromium.launch({ executablePath: process.env.CHROME || undefined, args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--enable-webgl'] });
   let bad = 0;
   for (const n of names) { const t0 = Date.now(), out = await runOne(browser, port, n, shot); const fail = /EVAL ERROR|NO SUCH SCENARIO|pageerror:/.test(out); if (fail) bad++; console.log('=== ' + n + '  (' + ((Date.now() - t0) / 1000).toFixed(0) + ' s)' + (fail ? '  FAILED' : '') + '\n' + out + '\n'); }
+  try { const kept = fs.readdirSync(path.join(DATA, 'lookfix')); console.log('kept by the server (' + path.join(DATA, 'lookfix') + '): ' + kept.join(', ')); } catch (e) {}
   await browser.close(); srv.close();
   console.log(bad ? bad + ' of ' + names.length + ' scenarios failed to run' : names.length + ' scenarios ran. They print what happened; read the output against what each scenario says it wants.');
   process.exit(bad ? 1 : 0);
