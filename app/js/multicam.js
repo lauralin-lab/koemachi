@@ -207,7 +207,7 @@
   const pickMime = () => ['video/mp4;codecs=avc1.640033', 'video/mp4;codecs=avc1.640028', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'].find((m) => { try { return MediaRecorder.isTypeSupported(m); } catch (e) { return false; } });
   function startRec() {
     if (!rig.on || rig.rec || (YX.filmBusy && YX.filmBusy())) return false;
-    const c = renderer.domElement; rig.rec = { t0: performance.now(), chunks: [], mr: null, scene: YX.sceneText ? YX.sceneText() : '', names: rig.cams.map((c) => c.A), moving: !!rig.moving, free: rig.cams.some((c) => c.A.free) };
+    const c = renderer.domElement; rig.rec = { t0: performance.now(), chunks: [], mr: null, names: rig.cams.map((c) => c.A), moving: !!rig.moving, free: rig.cams.some((c) => c.A.free) };
     YX.filmFrame([TILE[0] * rig.cams.length, TILE[1]]); document.body.classList.add('cinema', 'multicam'); paintHud(); aim();
     const cine = $('cine'); if (cine) cine.classList.add('rec');
     if (c.captureStream && typeof MediaRecorder !== 'undefined') {
@@ -224,7 +224,7 @@
     if (R.done) return; R.done = true; const blob = R.chunks.length ? new Blob(R.chunks, { type: R.type || 'video/webm' }) : null;
     const d = new Date(), p2 = (v) => String(v).padStart(2, '0'), stem = 'spoken-world-multicam-' + p2(d.getHours()) + p2(d.getMinutes()) + p2(d.getSeconds());
     const N = R.names || ANGLES, n = N.length, note = n === 1 ? T('一个定机位：' + N[0].zh + '。', 'One standing camera: ' + N[0].en.toLowerCase() + '.') : T(n + ' 个机位同一时刻，从左到右：' + N.map((a) => a.key + ' ' + a.zh).join('，') + (R.moving ? '（机位跟着它一起走）' : '') + '。每格 1280x720。', n + ' cameras, one moment, left to right: ' + N.map((a) => a.key + ' ' + a.en.toLowerCase()).join(', ') + (R.moving ? ' (the cameras travel with it)' : '') + '. Each picture is 1280x720.');
-    if (blob && YX.filmTake) YX.filmTake(blob, R.type, R.secs, note + '\n\n' + R.scene, stem, { tiles: n, scene: R.scene, angles: N.map((a) => [a.key, T(a.zh, a.en.toLowerCase())]) });
+    if (blob && YX.filmTake) YX.filmTake(blob, R.type, R.secs, note, stem, { tiles: n });
     else if (!blob) toast(T('三机位片子没录到画面', 'Nothing was recorded'));
   }
   // the frame: while filming, the three pictures side by side and nothing else; while standing by, the player's view with the monitors on top

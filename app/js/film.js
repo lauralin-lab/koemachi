@@ -1,46 +1,12 @@
-/* Spoken World · film: record a 16:9 clip of the world, describe the scene for a video model, and compare the result side by side.
-   The page cannot call outside APIs: turning the previz into real footage happens outside it, with whatever video model the viewer uses. */
+/* Spoken World · film: record a 16:9 clip of the world and play it back. */
 'use strict';
 (function () {
   const YX = window.YX, W = YX.world, T = YX.T, U = YX.ui, $ = (id) => document.getElementById(id);
   const LIMIT = 10, SIZE = [1280, 720]; // seconds an uploaded source video may run; the frame every clip is recorded at
   const canvas = YX.three.renderer.domElement, cine = $('cine');
-  const BASE_PROMPT = 'Turn this rough 3D previsualization into photorealistic live-action footage. Use the animation only as a guide: keep the exact camera movement, framing and timing, and keep every building, vehicle, person and tree in the same position, doing the same thing. Real materials, natural light and shadows. Continuous, unbroken shot. Do not show the low-poly 3D look in the final video. No dialogue, only natural ambient sound.';
-  let mr = null, chunks = [], t0 = 0, tick = 0, cap = 0, mode = '', clip = null, sceneAtRec = '';
+  let mr = null, chunks = [], t0 = 0, tick = 0, cap = 0, mode = '', clip = null;
   const fmt = (s) => { s = Math.max(0, s); return Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0') + '.' + Math.floor((s * 10) % 10); };
 
-  /* ---------- the scene, in words ---------- */
-  const PLURAL = { person: 'people', child: 'children', bus: 'buses', bench: 'benches', bush: 'bushes', box: 'boxes', taxi: 'taxis', 'bus stop': 'bus stops', 'flower bed': 'flower beds', café: 'cafés' };
-  function nameOf(o, def) {
-    const p = o.params || {};
-    if (o.type === 'person') return p.pose === 'ride' ? 'cyclist' : p.age === 'child' ? 'child' : 'person';
-    if (o.type === 'car') return p.kind === 'taxi' ? 'taxi' : p.kind === 'van' ? 'van' : p.kind === 'pickup' ? 'pickup truck' : 'car';
-    if (o.type === 'bus') return +p.decks === 2 ? 'double-decker bus' : 'bus';
-    if (o.type === 'tree') return ['cherry', 'pine', 'palm', 'birch', 'maple'].includes(p.kind) ? p.kind + ' tree' : 'tree';
-    if (o.type === 'flowers') return 'flower bed';
-    if (o.type === 'water') return 'open water';
-    return String(def.en || def.label || o.type).toLowerCase();
-  }
-  YX.sceneText = function () {
-    const E = W.env, h = +E.time || 12, P = W.player;
-    const tod = h < 5 || h >= 21 ? 'night' : h < 7 ? 'dawn' : h < 10 ? 'morning' : h < 15 ? 'midday' : h < 17.3 ? 'late afternoon' : h < 19.5 ? 'golden hour, low warm sun' : 'dusk';
-    const wx = { clear: 'clear sky', cloudy: 'overcast sky', rain: 'steady rain, wet streets', snow: 'snow falling', fog: 'thick fog', storm: 'a thunderstorm' }[E.weather] || String(E.weather || 'clear sky');
-    const gnd = { grass: 'green grass', sand: 'sand', snow: 'snow on the ground', dirt: 'bare earth', stone: 'stone paving' }[E.ground] || '';
-    const pts = W.shots.length ? W.shots : [P], n = {};
-    // only what a camera sees: near it, or within about 50 degrees of where it points
-    const sees = (p, o, reach) => { const dx = o.x - p.x, dz = o.z - p.z, d = Math.hypot(dx, dz); if (d > reach) return false; if (d < 6) return true; return (dx * -Math.sin(p.yaw || 0) + dz * -Math.cos(p.yaw || 0)) / d > 0.62; };
-    for (const o of W.objs.values()) {
-      if (o.dead || o.type === '__pending' || o.type === 'road' || o.type === 'cloud' || o.type === 'light') continue;
-      const def = YX.defOf(o); if (!def) continue;
-      const reach = def.cls === 'building' || o.type === 'hill' || o.type === 'water' ? 80 : 45;
-      if (!pts.some((p) => sees(p, o, reach))) continue;
-      const k = nameOf(o, def); n[k] = (n[k] || 0) + 1;
-    }
-    const road = Array.from(W.objs.values()).some((o) => o.type === 'road' && !o.dead);
-    const items = Object.keys(n).sort((a, b) => n[b] - n[a]).slice(0, 8).map((k) => (n[k] === 1 ? (/^[aeiou]/.test(k) ? 'an ' : 'a ') + k : (n[k] > 12 ? 'many ' : n[k] > 4 ? 'several ' : ['two ', 'three ', 'four '][n[k] - 2]) + (PLURAL[k] || k + 's')));
-    return (tod + ', ' + wx + (gnd ? ', ' + gnd : '') + '. ' + (road ? 'A small-town street. ' : '') + (items.length ? 'In view: ' + items.join(', ') + '.' : '')).replace(/^./, (c) => c.toUpperCase());
-  };
-  YX.filmPrompt = () => BASE_PROMPT + ' Scene: ' + (sceneAtRec || YX.sceneText());
 
   /* ---------- recording ---------- */
   const pickMime = () => ['video/mp4;codecs=avc1.640028', 'video/mp4;codecs=avc1.42E01E', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find((m) => { try { return MediaRecorder.isTypeSupported(m); } catch (e) { return false; } });
@@ -54,7 +20,7 @@
     if (!canvas.captureStream || typeof MediaRecorder === 'undefined') return U.toast(T('这个浏览器不支持录制', 'This browser cannot record'));
     if (m === 'shots' && !W.shots.length) return U.toast(T('还没有机位。先存一个，或者用“实时录制”', 'No shots yet. Save one first, or use “Record live”'));
     if (YX.playing) return;
-    const mime = pickMime(); U.closePops(); YX.filmFrame(SIZE); mode = m; chunks = []; sceneAtRec = YX.sceneText();
+    const mime = pickMime(); U.closePops(); YX.filmFrame(SIZE); mode = m; chunks = [];
     cap = m === 'shots' ? Math.min(LIMIT, planned() + 0.3) : m === 'move' ? Math.min(LIMIT, move.dur + 0.5) : LIMIT;
     // one frame later the canvas has its new size: only then is the stream the right shape
     requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -98,20 +64,20 @@
     YX.filmFrame(null);
     const blob = new Blob(chunks, { type }); chunks = [];
     if (!blob.size) { paint(); return U.toast(T('没有录到画面', 'Nothing was recorded')); }
-    const d = new Date(), p2 = (v) => String(v).padStart(2, '0'), stem = 'spoken-world-previz-' + p2(d.getHours()) + p2(d.getMinutes()) + p2(d.getSeconds()), ext = type === 'video/mp4' ? '.mp4' : '.webm';
-    clip = { blob, url: URL.createObjectURL(blob), name: stem + ext, secs: lastSecs, scene: sceneAtRec, stem, type, tiles: 1, title: recTitle };
+    const d = new Date(), p2 = (v) => String(v).padStart(2, '0'), stem = 'spoken-world-clip-' + p2(d.getHours()) + p2(d.getMinutes()) + p2(d.getSeconds()), ext = type === 'video/mp4' ? '.mp4' : '.webm';
+    clip = { blob, url: URL.createObjectURL(blob), name: stem + ext, secs: lastSecs, stem, type, tiles: 1, title: recTitle };
     clips.unshift(clip); while (clips.length > 8) { const old = clips.pop(); try { URL.revokeObjectURL(old.url); } catch (e) {} }
     U.togglePanel('director', 'bDir', true); paint(); showClip(clip); // the film is on screen the moment it exists
     if (U.canSave()) saveClip(clip);
   }
   const clips = []; // what was recorded in this session, newest first
-  YX.filmTake = function (blob, type, secs, sceneTxt, stem, opt) { // a clip recorded by something else (the three-camera rig) joins the list, opens and is saved like any other; opt.tiles: pictures side by side, opt.scene: the scene alone, for a video model
-    const ext = type === 'video/mp4' ? '.mp4' : '.webm', c = { blob, url: URL.createObjectURL(blob), name: stem + ext, secs: +secs || 0, scene: sceneTxt || '', stem, type, tiles: (opt && opt.tiles) || 1, angles: (opt && opt.angles) || null, sceneOnly: (opt && opt.scene) || '' };
+  YX.filmTake = function (blob, type, secs, note, stem, opt) { // a clip recorded by something else (the three-camera rig) joins the list, opens and is saved like any other; opt.tiles: pictures side by side
+    const ext = type === 'video/mp4' ? '.mp4' : '.webm', c = { blob, url: URL.createObjectURL(blob), name: stem + ext, secs: +secs || 0, stem, type, tiles: (opt && opt.tiles) || 1 };
     clip = c; clips.unshift(c); while (clips.length > 8) { const old = clips.pop(); try { URL.revokeObjectURL(old.url); } catch (e) {} }
     U.togglePanel('director', 'bDir', true); paint(); showClip(c); if (U.canSave()) saveClip(c);
   };
-  function saveClip(c) { if (!U.canSave()) return U.toast(T('这个窗口不能保存文件', 'This window cannot save files')); U.save({ filename: c.name, data: c.blob }).then(() => U.save({ filename: c.stem + '.txt', data: c.scene })).then(() => U.toast(T('已保存 ' + c.name + ' 和同名的场景描述 .txt：交给视频模型就能转成实拍', 'Saved ' + c.name + ' and its scene description (.txt): give both to a video model to make it real')), U.saveFail); }
-  function showClip(c) { clearPane(B); setPane(A, c.blob, c.name); aSrc = { clip: c, tile: -1 }; markEx(-1); note(T('你的片子 · ' + c.secs.toFixed(1) + ' 秒。在页面外用视频模型转成实拍后，把结果拖到右边，就能并排对比', 'Your clip · ' + c.secs.toFixed(1) + ' s. Once a video model outside this page has turned it into footage, drop the result on the right to compare')); open(); vA.addEventListener('loadeddata', () => { if (cmp.classList.contains('on')) play(); }, { once: true }); }
+  function saveClip(c) { if (!U.canSave()) return U.toast(T('这个窗口不能保存文件', 'This window cannot save files')); U.save({ filename: c.name, data: c.blob }).then(() => U.toast(T('已保存 ' + c.name, 'Saved ' + c.name)), () => U.toast(T('没能保存 ' + c.name, 'Could not save ' + c.name))); }
+  function showClip(c) { setPane(c.blob, c.name); note(T('你的片子 · ' + c.secs.toFixed(1) + ' 秒', 'Your clip · ' + c.secs.toFixed(1) + ' s')); open(); vA.addEventListener('loadeddata', () => { if (cmp.classList.contains('on')) play(); }, { once: true }); }
   function paintClips() {
     const L = $('clipList'); if (!L) return; L.textContent = ''; { const cap = L.previousElementSibling; if (cap && cap.classList.contains('fhint')) cap.style.display = clips.length ? '' : 'none'; }
     if (!clips.length) { const e = document.createElement('div'); e.className = 'empty'; e.textContent = T('录好的片子会出现在这里，并立刻打开播放。', 'What you record appears here and opens straight away.'); L.appendChild(e); return; }
@@ -132,101 +98,38 @@
   $('sVid').onclick = () => start('shots'); $('sLive').onclick = () => start('live');
   for (const b of document.querySelectorAll('#moveRow [data-mv]')) b.onclick = () => { const rec = $('mvRec').getAttribute('aria-pressed') === 'true', r = YX.exec({ op: 'cam', move: b.dataset.mv, rec, instant: true }, YX.newCtx(YX.viewNow())); if (r && r.msg) U.toast(r.msg); };
   $('mvRec').onclick = () => $('mvRec').setAttribute('aria-pressed', String($('mvRec').getAttribute('aria-pressed') !== 'true'));
-  $('sPrompt').onclick = () => {
-    const text = YX.filmPrompt(), box = $('fPrompt'); box.value = text; box.classList.add('on');
-    const ok = () => U.toast(T('提示词已复制', 'Prompt copied')), no = () => { box.focus(); box.select(); U.toast(T('没能自动复制，已选中，请按 Ctrl/⌘+C', 'Could not copy automatically. It is selected: press Ctrl/⌘+C')); };
-    try { navigator.clipboard.writeText(text).then(ok, no); } catch (e) { no(); }
-  };
-
-  /* ---------- compare ---------- */
-  const cmp = $('cmp'), A = $('cmpA'), B = $('cmpB'), vA = A.querySelector('video'), vB = B.querySelector('video'), seek = $('cmpSeek'), div = $('cmpDiv'), stage = $('cmpStage');
-  let wipe = 0.5, raf = 0, seeking = false, aSrc = null;
-  const has = (p) => p.classList.contains('has'), dur = (v) => (isFinite(v.duration) && v.duration > 0 ? v.duration : 0);
-  const master = () => (has(A) ? vA : has(B) ? vB : null);
-  function clearPane(pane) { if (pane === A) aSrc = null; const v = pane.querySelector('video'); try { v.pause(); } catch (e) {} if (v._url) { URL.revokeObjectURL(v._url); v._url = null; } v.removeAttribute('src'); try { v.load(); } catch (e) {} pane.classList.remove('has'); pane.title = ''; }
+  /* ---------- the clip player: a recorded clip, played full screen ---------- */
+  const cmp = $('cmp'), A = $('cmpA'), vA = A.querySelector('video'), seek = $('cmpSeek');
+  let raf = 0, seeking = false;
+  const dur = (v) => (isFinite(v.duration) && v.duration > 0 ? v.duration : 0);
   function note(t) { const n = $('cmpNote'); if (n) n.textContent = t || ''; }
-  function setPane(pane, file, name) {
-    const v = pane.querySelector('video'); if (v._url) URL.revokeObjectURL(v._url);
-    v._url = URL.createObjectURL(file); v.src = v._url; v.loop = false; if (pane === B) vA.loop = false; else if (!has(B)) v.loop = true; /* a clip on its own plays round and round */ v.muted = pane === A || $('cmpSnd').getAttribute('aria-pressed') !== 'true';
-    pane.classList.add('has'); pane.title = name || file.name || ''; v.load(); pause(); applyWipe(); markEx(-1); if (pane === A) aSrc = null;
+  function setPane(file) {
+    if (vA._url) URL.revokeObjectURL(vA._url);
+    vA._url = URL.createObjectURL(file); vA.src = vA._url; vA.loop = true; vA.muted = true; vA.load(); pause();
     // a clip straight from the recorder may not know its own length yet: seeking far past the end makes the browser work it out
-    v.addEventListener('loadedmetadata', () => { if (!isFinite(v.duration)) { const back = () => { v.removeEventListener('timeupdate', back); try { v.currentTime = 0; } catch (e) {} }; v.addEventListener('timeupdate', back); try { v.currentTime = 1e101; } catch (e) {} } }, { once: true });
-    if (pane === A && clip && file === clip.blob) { const own = clip; v.addEventListener('durationchange', () => { if (clip === own && isFinite(v.duration) && v.duration > 0) { own.secs = v.duration; paint(); } }); }
+    vA.addEventListener('loadedmetadata', () => { if (!isFinite(vA.duration)) { const back = () => { vA.removeEventListener('timeupdate', back); try { vA.currentTime = 0; } catch (e) {} }; vA.addEventListener('timeupdate', back); try { vA.currentTime = 1e101; } catch (e) {} } }, { once: true });
+    if (clip && file === clip.blob) { const own = clip; vA.addEventListener('durationchange', () => { if (clip === own && isFinite(vA.duration) && vA.duration > 0) { own.secs = vA.duration; paint(); } }); }
   }
-  function applyWipe() { // the real footage lies over the previz and shows to the right of the divider
-    const on = cmp.classList.contains('wipe'); vB.style.clipPath = on ? 'inset(0 0 0 ' + (wipe * 100).toFixed(2) + '%)' : ''; div.style.left = (wipe * 100).toFixed(2) + '%'; div.setAttribute('aria-valuenow', String(Math.round(wipe * 100)));
-  }
-  function paintTime() { const m = master(); if (!m) { $('cmpTime').textContent = '0:00.0 / 0:00.0'; return; } const d = dur(m); $('cmpTime').textContent = fmt(m.currentTime) + ' / ' + fmt(d); if (!seeking && d) seek.value = String(Math.round((m.currentTime / d) * 1000)); }
-  function loop() {
-    raf = requestAnimationFrame(loop); const m = master(); if (!m) return;
-    const dA = dur(vA), dB = dur(vB);
-    if (has(A) && has(B) && dA && dB && !vA.paused) { // both clips end together even if the model returned a slightly different length
-      const k = dB / dA, err = vB.currentTime - vA.currentTime * k;
-      if (vB.seeking) { /* let the last seek land */ }
-      else if (Math.abs(err) > 0.3) vB.currentTime = Math.min(dB - 0.01, vA.currentTime * k + 0.03); // far off: jump
-      else vB.playbackRate = Math.min(4, Math.max(0.25, k * (1 - Math.max(-0.2, Math.min(0.2, err))))); // a little off: drift back without a visible seek
-    }
-    if (m.ended || (dur(m) && m.currentTime >= dur(m) - 0.02 && !m.paused)) { for (const v of [vA, vB]) { try { v.currentTime = 0; } catch (e) {} } play(); }
-    paintTime();
-  }
-  function play() { const dA = dur(vA), dB = dur(vB); if (has(A) && has(B) && dA && dB) { try { vB.currentTime = Math.min(dB - 0.01, vA.currentTime * (dB / dA)); } catch (e) {} } for (const [p, v] of [[A, vA], [B, vB]]) if (has(p)) { const r = v.play(); if (r && r.catch) r.catch(() => {}); } $('cmpPlay').textContent = T('❚❚ 暂停', '❚❚ Pause'); }
-  function pause() { vA.pause(); vB.pause(); $('cmpPlay').textContent = T('▶ 播放', '▶ Play'); }
-  const playing = () => { const m = master(); return !!m && !m.paused; };
-  function seekTo(f) { const dA = dur(vA), dB = dur(vB); if (has(A) && dA) vA.currentTime = Math.min(dA - 0.01, f * dA); if (has(B) && dB) vB.currentTime = Math.min(dB - 0.01, f * dB); paintTime(); }
-  function nudge(dt) { pause(); const m = master(); if (!m || !dur(m)) return; seekTo(Math.min(1, Math.max(0, (m.currentTime + dt) / dur(m)))); }
-  /* examples that ship with the page: the same shot as 3D previz and as generated footage */
-  const EX = [['01-arrival', '升降落幅 · 黄昏主街', 'Crane down · main street at dusk'], ['02-bus-chase', '航拍跟车 · 双层巴士', 'Drone chase · double-decker'], ['04-morning-ride', '低机位跟拍 · 清晨骑行', 'Tracking shot · morning ride'], ['05-bakery', '室内推进 · 面包店', 'Push in · inside the bakery'], ['03-fountain-night', '环绕 · 夜晚的喷泉', 'Orbit · fountain at night']];
-  let exNow = -1, autoEx = -1;
-  function tryAuto() { if (autoEx >= 0 && autoEx === exNow && cmp.classList.contains('on') && vA.readyState >= 2 && vB.readyState >= 2) { autoEx = -1; play(); } } // an example starts by itself once both sides can play
-  function markEx(i) { exNow = i; for (const b of $('cmpGal').querySelectorAll('button')) b.setAttribute('aria-pressed', String(+b.dataset.i === i)); }
-  const exBlobs = new Map(); // what has been downloaded once is not downloaded again
-  function setUrl(pane, url, name) { // a file of the page itself. The frame does not let a <video> load it by address, so it is downloaded and played from memory; if that will not play, as a data: address; only then by address
-    const v = pane.querySelector('video'), job = (v._job = (v._job || 0) + 1), mine = () => v._job === job;
-    const fail = (why) => { if (!mine()) return; note(T('示例没能加载', 'The example could not be loaded') + (why ? ' (' + why + ')' : '')); U.toast(T('示例没能加载', 'The example could not be loaded') + (why ? ': ' + why : '')); };
-    const ready = () => { if (!mine()) return; v.onerror = null; if (vA.readyState >= 2 && vB.readyState >= 2) note(''); tryAuto(); };
-    const direct = (why) => { if (!mine()) return; v.onerror = () => { v.onerror = null; fail(why); }; v.addEventListener('loadeddata', ready, { once: true }); v.src = url; v.load(); };
-    const asData = (b, why) => { if (!mine()) return; const fr = new FileReader(); fr.onload = () => { if (!mine()) return; if (v._url) { URL.revokeObjectURL(v._url); v._url = null; } v.onerror = () => { v.onerror = null; direct(why); }; v.addEventListener('loadeddata', ready, { once: true }); v.src = fr.result; v.load(); }; fr.onerror = () => direct(why); fr.readAsDataURL(b); };
-    const show = (b) => { if (!mine()) return; const keep = exNow; setPane(pane, b, name); markEx(keep); v.onerror = () => { v.onerror = null; asData(b, T('这个浏览器不播放内存里的视频', 'this browser will not play the downloaded copy')); }; v.addEventListener('loadeddata', ready, { once: true }); };
-    if (v._url) { URL.revokeObjectURL(v._url); v._url = null; } try { v.pause(); } catch (e) {} v.removeAttribute('src'); v.onerror = null;
-    v.muted = pane === A || $('cmpSnd').getAttribute('aria-pressed') !== 'true'; pane.classList.add('has'); pane.title = name; note(T('正在载入示例…', 'Loading the example…'));
-    if (exBlobs.has(url)) return show(exBlobs.get(url));
-    fetch(url).then((r) => (r.ok ? r.blob() : Promise.reject(new Error('HTTP ' + r.status)))).then((b) => { const mp4 = new Blob([b], { type: 'video/mp4' }); exBlobs.set(url, mp4); show(mp4); }).catch((e) => direct(String((e && e.message) || e || '').slice(0, 80)));
-  }
-  function showEx(i, auto) { aSrc = null; const e = EX[i]; if (!e) return; pause(); note(''); vA.loop = false; setUrl(A, 'media/' + e[0] + '.previz.mp4', e[0]); setUrl(B, 'media/' + e[0] + '.real.mp4', e[0] + ' real'); applyWipe(); markEx(i); autoEx = auto ? i : -1; }
-  function paintGal() { const g = $('cmpGal'); g.textContent = ''; const l = document.createElement('span'); l.textContent = T('示例', 'Examples'); g.appendChild(l); EX.forEach((e, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'sbtn'; b.dataset.i = i; b.textContent = T(e[1], e[2]); b.setAttribute('aria-pressed', String(i === exNow)); b.onclick = () => showEx(i, true); g.appendChild(b); }); }
+  function paintTime() { const d = dur(vA); $('cmpTime').textContent = fmt(vA.currentTime) + ' / ' + fmt(d); if (!seeking && d) seek.value = String(Math.round((vA.currentTime / d) * 1000)); }
+  function loop() { raf = requestAnimationFrame(loop); paintTime(); }
+  function play() { const r = vA.play(); if (r && r.catch) r.catch(() => {}); $('cmpPlay').textContent = T('❚❚ 暂停', '❚❚ Pause'); }
+  function pause() { vA.pause(); $('cmpPlay').textContent = T('▶ 播放', '▶ Play'); }
+  const playing = () => !vA.paused && !vA.ended;
+  function seekTo(f) { const d = dur(vA); if (d) vA.currentTime = Math.min(d - 0.01, f * d); paintTime(); }
+  function nudge(dt) { pause(); const d = dur(vA); if (d) seekTo(Math.min(1, Math.max(0, (vA.currentTime + dt) / d))); }
   function open() {
     if (mr) return; U.closePops(); if (document.pointerLockElement) document.exitPointerLock();
-    cmp.classList.add('on'); document.body.classList.add('cmp-on'); paintGal(); if (clip && !has(A)) setPane(A, clip.blob, clip.name); else if (!has(A) && !has(B)) showEx(0, true); applyWipe(); if (!raf) loop(); $('cmpPlay').focus();
+    cmp.classList.add('on'); document.body.classList.add('cmp-on'); if (clip && !vA.src) setPane(clip.blob); if (!raf) loop(); $('cmpPlay').focus();
   }
   function close() { pause(); cmp.classList.remove('on'); document.body.classList.remove('cmp-on'); if (raf) cancelAnimationFrame(raf); raf = 0; canvas.focus(); }
-  YX.compare = { open, close, set: (side, file, name) => setPane(side === 'b' ? B : A, file, name) };
-  $('sCmp').onclick = () => { if (exNow < 0) showEx(0, true); open(); }; $('cmpX').onclick = close; // the Examples button always lands on an example
+  $('cmpX').onclick = close;
   $('cmpPlay').onclick = () => (playing() ? pause() : play());
-  $('cmpMode').onclick = () => { const on = !cmp.classList.contains('wipe'); cmp.classList.toggle('wipe', on); $('cmpMode').setAttribute('aria-pressed', String(on)); applyWipe(); };
-  $('cmpSnd').onclick = () => { const on = $('cmpSnd').getAttribute('aria-pressed') !== 'true'; $('cmpSnd').setAttribute('aria-pressed', String(on)); vB.muted = !on; };
   seek.addEventListener('input', () => { seeking = true; seekTo(+seek.value / 1000); }); seek.addEventListener('change', () => { seeking = false; });
-  for (const pane of [A, B]) {
-    const input = pane.querySelector('input'), pick = (f) => { if (f && /^video\//.test(f.type || 'video/')) setPane(pane, f, f.name); else if (f) U.toast(T('这不是视频文件', 'That is not a video file')); };
-    input.addEventListener('change', () => { pick(input.files && input.files[0]); input.value = ''; });
-    pane.querySelector('.cmpswap').onclick = () => input.click();
-    pane.addEventListener('dragover', (e) => { e.preventDefault(); pane.classList.add('over'); });
-    pane.addEventListener('dragleave', () => pane.classList.remove('over'));
-    pane.addEventListener('drop', (e) => { e.preventDefault(); e.stopPropagation(); pane.classList.remove('over'); pick(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]); });
-  }
-  // in wipe mode the real footage covers the previz pane, so a file dropped anywhere goes to whichever side is still empty
-  stage.addEventListener('dragover', (e) => e.preventDefault());
-  stage.addEventListener('drop', (e) => { e.preventDefault(); const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) setPane(!has(A) ? A : B, f, f.name); });
-  let dragW = false;
-  const wipeAt = (e) => { const r = stage.getBoundingClientRect(); wipe = Math.min(0.98, Math.max(0.02, (e.clientX - r.left) / Math.max(1, r.width))); applyWipe(); };
-  div.addEventListener('pointerdown', (e) => { dragW = true; div.setPointerCapture(e.pointerId); wipeAt(e); });
-  div.addEventListener('pointermove', (e) => { if (dragW) wipeAt(e); });
-  div.addEventListener('pointerup', () => { dragW = false; }); div.addEventListener('pointercancel', () => { dragW = false; });
   window.addEventListener('keydown', (e) => {
     if (!cmp.classList.contains('on')) return;
-    const onDiv = document.activeElement === div;
     if (e.code === 'Escape') { e.preventDefault(); close(); }
     else if (e.code === 'Space' && !/^(BUTTON|INPUT)$/.test((e.target && e.target.tagName) || '')) { e.preventDefault(); playing() ? pause() : play(); }
-    else if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { if (e.target === seek) return; e.preventDefault(); const s = e.code === 'ArrowLeft' ? -1 : 1; if (onDiv) { wipe = Math.min(0.98, Math.max(0.02, wipe + s * 0.02)); applyWipe(); } else nudge(s / 24); }
+    else if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { if (e.target === seek) return; e.preventDefault(); nudge((e.code === 'ArrowLeft' ? -1 : 1) / 24); }
   }, true);
   paint();
 })();

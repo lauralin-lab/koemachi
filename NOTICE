@@ -2,7 +2,8 @@ Spoken World
 Copyright 2026 ryannli (https://github.com/ryannli)
 
 This fork is built on spoken-world by ryannli (https://github.com/ryannli/spoken-world), Apache-2.0.
-Modifications in this fork: the Gemini provider, Gemini transcription and the in-page "Make it real" video feature (Gemini Omni) were removed;
+Modifications in this fork: the Gemini provider, Gemini transcription and the whole "Make it real" workflow (in-page video generation, the copy-prompt button, the
+previs/real comparison pane and the example clips in app/media) were removed;
 the model is now Thinking Machines' Inkling via Tinker, called through the local server (site/serve.js, site/tinker.js); voice input uses the
 browser's Web Speech API; the Claude artifact host and the Vercel deployment files were removed.
 
@@ -18,6 +19,3 @@ This product includes or uses the following third-party work:
 
 - DM Mono typeface, embedded in app/index.html. Copyright 2020 The DM Mono Project Authors
   (https://www.github.com/googlefonts/dm-mono). SIL Open Font License 1.1: licenses/DM-Mono-OFL.txt
-
-The example clips in app/media/ are part of this project: the "previz" clips were recorded in Spoken World,
-and the "real" clips were generated from them with a video model (Gemini Omni).

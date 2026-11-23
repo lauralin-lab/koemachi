@@ -26,32 +26,20 @@ engine, no model files, no install. Open a page and talk.
 
 <table>
   <tr>
-    <td width="33%" align="center" valign="top">
+    <td width="50%" align="center" valign="top">
       <img src="docs/say-it.gif" alt="A bus becomes a double-decker when asked" width="100%"><br>
       <b>Say it</b><br>
       <sub>"Make it a double-decker."</sub>
     </td>
-    <td width="33%" align="center" valign="top">
+    <td width="50%" align="center" valign="top">
       <img src="docs/build-it.gif" alt="A fountain is rebuilt from a spoken description" width="100%"><br>
       <b>Ask for what does not exist</b><br>
       <sub>"Make this fountain grander: three marble tiers, four bronze horses, and a ring of jets."</sub>
-    </td>
-    <td width="33%" align="center" valign="top">
-      <img src="docs/film-it.gif" alt="Three cameras film a bus; the clip becomes live-action footage" width="100%"><br>
-      <b>Film it</b><br>
-      <sub>"Film the bus with three cameras."</sub>
     </td>
   </tr>
 </table>
 
 <p align="center"><sub>Cut from a film recorded in the real interface. Captions were added in the edit; where the model's wait is shortened, the corner of the picture says so.</sub></p>
-
-## From a 3D sketch to footage
-
-<p align="center"><img src="docs/previz-real.jpg" alt="Four shots recorded in Spoken World, and the live-action footage a video model made from each" width="100%"></p>
-
-Top row: frames of clips recorded in the world. Bottom row: the same moment of the footage a video model made from each
-clip, keeping the camera move and where everything stands. The page comes with these pairs to play side by side.
 
 ## Run it
 

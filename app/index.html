@@ -134,35 +134,21 @@ button { cursor: pointer; }
 .fstep b { font-size: 13px; font-weight: 600; display: block; }
 .fstep span { font-size: 11.5px; line-height: 1.4; color: var(--paper-dim); display: block; }
 #director .row { flex-wrap: wrap; }
-#fPrompt { display: none; width: 100%; height: 76px; font: 11px/1.4 var(--f-mono); color: var(--paper); background: rgba(0, 0, 0, .25); border: 1px solid var(--line); border-radius: 7px; padding: 6px; resize: vertical; }
-#fPrompt.on { display: block; }
 body.filming #stage { object-fit: contain; background: #000; }
 #cine.rec::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--cinnabar); margin-right: 8px; animation: recdot 1s steps(2) infinite; }
 @keyframes recdot { 50% { opacity: .25; } }
-#cmp { position: fixed; inset: 0; z-index: 30; display: none; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 10px; padding: 14px 16px 16px; background: #0b0d0f; color: var(--paper); }
+#cmp { position: fixed; inset: 0; z-index: 30; display: none; grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px; padding: 14px 16px 16px; background: #0b0d0f; color: var(--paper); }
 #cmp.on { display: grid; }
-.cmpgal { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; } .cmpgal span { font: 600 11px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--paper-dim); margin-right: 4px; }
 #moveRow { gap: 6px; } #moveRow .lbl { flex: 1 0 100%; font-size: 11.5px; color: var(--paper-dim); }
 .cmpbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .cmpbar b { font-family: var(--f-display); font-weight: 600; font-size: 17px; margin-right: auto; }
-.cmpstage { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; min-height: 0; align-items: center; }
+.cmpstage { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-height: 0; align-items: center; }
 .cmppane { position: relative; min-height: 0; max-height: 100%; aspect-ratio: 16 / 9; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #000; display: grid; }
 .cmppane video { width: 100%; height: 100%; object-fit: contain; display: none; grid-area: 1 / 1; min-height: 0; }
 .cmppane.has video { display: block; }
-.cmpdrop { grid-area: 1 / 1; display: grid; place-content: center; justify-items: center; gap: 6px; padding: 20px; text-align: center; cursor: pointer; border: 1.5px dashed rgba(244, 239, 230, .28); border-radius: 9px; margin: 12px; }
-.cmpdrop b { font-size: 15px; font-weight: 600; } .cmpdrop span { font-size: 12.5px; color: var(--paper-dim); max-width: 30em; line-height: 1.5; }
-.cmppane.has .cmpdrop { display: none; } .cmppane.over { border-color: var(--paper); }
-.cmptag { position: absolute; left: 10px; top: 10px; z-index: 2; font-style: normal; font: 600 11.5px/1 var(--f-mono); padding: 6px 9px; border-radius: 6px; background: rgba(11, 13, 15, .72); pointer-events: none; }
-#cmpB .cmptag { left: auto; right: 10px; background: var(--cinnabar); color: #fff; }
-.cmpswap { position: absolute; right: 10px; bottom: 10px; z-index: 2; display: none; } .cmppane.has .cmpswap { display: block; } #cmpB .cmpswap { right: auto; left: 10px; }
-#cmpDiv { display: none; position: absolute; top: 0; bottom: 0; width: 28px; margin-left: -14px; cursor: ew-resize; z-index: 3; touch-action: none; }
-#cmpDiv::before { content: ''; position: absolute; left: 13px; top: 0; bottom: 0; width: 2px; background: #fff; }
-#cmpDiv::after { content: '◂ ▸'; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 11px; white-space: nowrap; padding: 6px 7px; border-radius: 999px; background: #fff; color: #111; }
-#cmp.wipe .cmpstage { display: block; } #cmp.wipe .cmppane { position: absolute; inset: 0; aspect-ratio: auto; } #cmp.wipe #cmpB { background: transparent; border-color: transparent; } #cmp.wipe #cmpB.has { pointer-events: none; } #cmp.wipe #cmpB.has .cmpswap { pointer-events: auto; } #cmp.wipe #cmpA .cmpswap { right: auto; left: 10px; } #cmp.wipe #cmpB .cmpswap { left: auto; right: 10px; } #cmp.wipe #cmpDiv { display: block; }
 .cmpctl { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
 .cmpctl input[type=range] { width: 100%; accent-color: var(--cinnabar); }
 #cmpPlay { min-width: 84px; padding: 8px 14px; font-weight: 600; }
-@media (max-width: 640px) { .cmpstage { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; } }
 #director h3, #outliner h3, .pop h3 { margin: 0; font-family: var(--f-display); font-weight: 600; font-size: 14px; letter-spacing: .12em; display: flex; align-items: center; gap: 8px; }
 #shotList, #clipList { max-height: 212px; overflow-y: auto; }
 #director h3 .sbtn { font: 500 11.5px/1.5 var(--f-ui); letter-spacing: 0; }
@@ -267,8 +253,7 @@ html[lang^="zh"] .brand b { font-size: 14px; letter-spacing: .34em; }
 #cine { border-radius: 6px; } #cine.rec::before { background: var(--rec); }
 .pop { border-radius: 8px; } .toast { border-radius: 6px; } #pad button { border-radius: 8px; }
 .cmpbar b { font: 600 12px/1 var(--f-display); letter-spacing: .22em; text-transform: uppercase; }
-.cmppane { border-radius: 6px; } .cmptag { border-radius: 4px; letter-spacing: .06em; text-transform: uppercase; font-size: 10.5px; }
-#cmpB .cmptag { background: var(--voice); color: var(--ink); }
+.cmppane { border-radius: 6px; }
 
 /* ---------- title card ---------- */
 #intro { position: fixed; inset: 0; z-index: 10; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; cursor: pointer; }
@@ -397,7 +382,7 @@ body.cinema #top, body.cinema #bar, body.cinema #log, body.cinema #director, bod
 <section id="log" aria-live="polite" aria-label="Command log" data-ia="aria-label:aLog"></section>
 
 <section id="director" class="glass" aria-label="Shots and preview" data-ia="aria-label:aDir">
-  <h3><span class="seal" data-i="dirSeal">◎</span><span data-i="dirTitle">Film</span><button class="sbtn sm" id="sCmp" type="button" data-i="sCmp" style="margin-left:auto">▶ 3D → real examples</button></h3>
+  <h3><span class="seal" data-i="dirSeal">◎</span><span data-i="dirTitle">Film</span></h3>
   <button class="recbig" id="sLive" type="button" aria-pressed="false"><i aria-hidden="true"></i><span data-i="sLive">Record what I see</span><em id="recT"></em></button>
   <p class="fhint" data-i="f1s">Say a move (“orbit this house”) → say what to change (“farther”, “start from the left”) → say “record it”.</p>
   <div class="row" id="moveRow"><button class="sbtn" type="button" data-mv="orbit" data-i="mvOrbit">Orbit</button><button class="sbtn" type="button" data-mv="push" data-i="mvPush">Push in</button><button class="sbtn" type="button" data-mv="pull" data-i="mvPull">Pull out</button><button class="sbtn" type="button" data-mv="street" data-i="mvStreet">Street</button><button class="sbtn" type="button" data-mv="crane" data-i="mvCrane">Crane up</button><button class="sbtn" type="button" data-mv="reveal" data-i="mvReveal">Reveal</button><button class="sbtn" type="button" data-mv="flyover" data-i="mvFly">Flyover</button><button class="sbtn" type="button" data-mv="follow" data-i="mvFollow">Follow</button><button class="sbtn rec" id="mvRec" type="button" aria-pressed="false" data-i="mvRec">● Record the move too</button></div>
@@ -406,7 +391,7 @@ body.cinema #top, body.cinema #bar, body.cinema #log, body.cinema #director, bod
   <div id="shotList" class="fgrid"></div>
   <button class="sbtn wide" id="sSave" type="button" data-i="sSave">＋ Save this view as a shot</button>
   <div class="fhead"><b data-i="fClips">Clips</b></div>
-  <p class="fhint" data-i="fClipsS">Recorded video. Click one to watch it. Real footage is made outside this page, then dropped in to compare.</p>
+  <p class="fhint" data-i="fClipsS">Recorded video. Click one to watch it.</p>
   <div id="clipList" class="fgrid"></div>
   <details id="fMore"><summary data-i="fMore">More tools</summary>
     <div class="row" id="lensRow" role="group" aria-label="Lens" data-ia="aria-label:aLens">
@@ -416,9 +401,7 @@ body.cinema #top, body.cinema #bar, body.cinema #log, body.cinema #director, bod
       <button class="sbtn rec" id="sRec" type="button" aria-pressed="false" data-i="sRec">● Handheld R</button>
       <button class="sbtn" id="sBox" type="button" aria-pressed="false" data-i="sBox">2.39 frame</button>
       <button class="sbtn" id="sShot" type="button" data-i="sShot">Grab frame K</button>
-      <button class="sbtn" id="sPrompt" type="button" data-i="sPrompt">Copy the prompt</button>
     </div>
-    <textarea id="fPrompt" readonly aria-label="Prompt" data-ia="aria-label:aPrompt"></textarea>
   </details>
 </section>
 
@@ -483,13 +466,10 @@ body.cinema #top, body.cinema #bar, body.cinema #log, body.cinema #director, bod
 </div>
 
 <div id="cine" class="glass mono"></div>
-<div id="cmp" role="dialog" aria-modal="true" aria-label="Compare" data-ia="aria-label:aCmp">
-  <div class="cmpbar"><b data-i="cmpT">3D previz → real footage</b><span id="cmpNote"></span><button class="sbtn" id="cmpMode" type="button" aria-pressed="false" data-i="cmpMode">Wipe</button><button class="sbtn" id="cmpSnd" type="button" aria-pressed="false" data-i="cmpSnd">Sound</button><button class="sbtn" id="cmpX" type="button" data-i="cmpX">Close <kbd>Esc</kbd></button></div>
-  <div class="cmpgal" id="cmpGal"></div>
+<div id="cmp" role="dialog" aria-modal="true" aria-label="Clip" data-ia="aria-label:aCmp">
+  <div class="cmpbar"><b data-i="cmpT">Clip</b><span id="cmpNote"></span><button class="sbtn" id="cmpX" type="button" data-i="cmpX">Close <kbd>Esc</kbd></button></div>
   <div class="cmpstage" id="cmpStage">
-    <div class="cmppane" id="cmpA"><video playsinline muted preload="auto"></video><label class="cmpdrop"><input type="file" accept="video/*" hidden><b data-i="cmpA1">3D previz</b><span data-i="cmpA2">Drop the clip you recorded here, or click to choose it.</span></label><i class="cmptag" data-i="cmpAT">3D previz · Spoken World</i><button class="sbtn cmpswap" type="button" data-i="cmpSwap">Change</button></div>
-    <div class="cmppane" id="cmpB"><video playsinline muted preload="auto"></video><label class="cmpdrop"><input type="file" accept="video/*" hidden><b data-i="cmpB1">Real footage</b><span data-i="cmpB2">Drop the footage a video model made from your clip here, or click to choose it.</span></label><i class="cmptag" data-i="cmpBT">Video model · made outside this page</i><button class="sbtn cmpswap" type="button" data-i="cmpSwap">Change</button></div>
-    <div id="cmpDiv" role="slider" aria-label="Wipe position" data-ia="aria-label:aWipe" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" tabindex="0"></div>
+    <div class="cmppane has" id="cmpA"><video playsinline muted preload="auto"></video></div>
   </div>
   <div class="cmpctl"><button class="sbtn" id="cmpPlay" type="button" data-i="cmpPlay">▶ Play</button><input type="range" id="cmpSeek" min="0" max="1000" value="0" aria-label="Position" data-ia="aria-label:aSeek"><span id="cmpTime" class="mono">0:00.0 / 0:00.0</span></div>
 </div>
