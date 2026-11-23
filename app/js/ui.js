@@ -193,7 +193,7 @@
 
   /* ---------- capabilities ---------- */
   function later() { return aiState === 'later' && !M.sample; } // the visitor came in without the AI, and the home of the page has a way to get it (host.access)
-  function setAI(s) { aiState = s; $('capAI').className = 'dot' + (s === 'on' || s === 'ready' ? ' on' : s === 'wait' || s === 'later' ? ' warn' : ''); $('capAIT').textContent = T({ later: H.strings.aiLater ? H.strings.aiLater[0] : 'AI 还没有接上，只能用当场生效的指令', check: 'AI 检测中', ready: H.strings.aiReady ? H.strings.aiReady[0] : 'AI 可用（第一次会请你授权）', wait: '等待你授权…', on: 'AI 已就绪', denied: 'AI 未授权，只能用当场生效的指令', none: 'AI 未连接：登录 Claude 才能玩' }[s], { later: H.strings.aiLater ? H.strings.aiLater[1] : 'No AI yet: only instant commands work', check: 'Checking the AI', ready: H.strings.aiReady ? H.strings.aiReady[1] : 'AI available (it asks your permission the first time)', wait: 'Waiting for your permission…', on: 'AI ready', denied: 'AI not allowed: only instant commands work', none: 'AI not connected: sign in to Claude to play' }[s]); gateCheck(); }
+  function setAI(s) { aiState = s; $('capAI').className = 'dot' + (s === 'on' || s === 'ready' ? ' on' : s === 'wait' || s === 'later' ? ' warn' : ''); $('capAIT').textContent = T({ later: H.strings.aiLater ? H.strings.aiLater[0] : 'AI 还没有接上，只能用当场生效的指令', check: 'AI 检测中', ready: H.strings.aiReady ? H.strings.aiReady[0] : 'AI 可用（第一次会请你授权）', wait: '等待你授权…', on: 'AI 已就绪', denied: 'AI 未授权，只能用当场生效的指令', none: 'AI 未连接：请先配置 Tinker' }[s], { later: H.strings.aiLater ? H.strings.aiLater[1] : 'No AI yet: only instant commands work', check: 'Checking the AI', ready: H.strings.aiReady ? H.strings.aiReady[1] : 'AI available (it asks your permission the first time)', wait: 'Waiting for your permission…', on: 'AI ready', denied: 'AI not allowed: only instant commands work', none: 'AI not connected: set up Tinker to play' }[s]); gateCheck(); }
   /* ---------- the sign-in gate ----------
      Everything said here is built by the host's AI on the viewer's own account. A viewer the page cannot reach that AI for (signed out, or a window
      that cannot use it) is told what to do, in the host's words (host.gate), and the world does not take input until then. An AI arriving later lifts it. */
@@ -371,7 +371,5 @@
   function skipTitle() { if (!title.on) return; clearInterval(title.timer); clearInterval(title.envT); clearTimeout(title.t2); YX.cineStop(); YX.setPose(title.home); W.player.fly = title.home.fly; if (Math.abs(W.env.time - title.env.time) > 0.01 || W.env.weather !== title.env.weather) YX.setEnv({ time: title.env.time, weather: title.env.weather }, { instant: true }); title.on = false; document.body.classList.remove('title'); $('intro').classList.add('off'); } // straight to the world, no flight
   YX.ui = { skipTitle, toast, closePops, togglePanel, canSave: () => !!dl, save: (o) => (dl ? dl.save(o) : Promise.reject({ code: 'none' })), saveFail, started: () => started, lang: () => S.ui };
   /* ---------- go ---------- */
-  const hot = window.claude && window.claude.hot;
-  if (hot && typeof hot.snapshot === 'function') { try { hot.snapshot(() => ({ world: snap() })); } catch (e) {} }
-  if (hot && typeof hot.ready === 'function') { try { hot.ready(boot); } catch (e) { boot({}); } } else boot((hot && hot.data) || {});
+  boot({});
 })();

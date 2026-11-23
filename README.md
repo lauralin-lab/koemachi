@@ -4,9 +4,8 @@
 A real-time 3D world you shape by talking to it, running in your browser.</p>
 
 <p align="center">
-  <a href="https://spoken-world.vercel.app"><b>Try it</b></a> &nbsp;·&nbsp;
-  <a href="#ways-to-run-it">Run it yourself</a> &nbsp;·&nbsp;
-  <a href="#cost">Cost</a>
+  <a href="#run-it"><b>Run it</b></a> &nbsp;·&nbsp;
+  <a href="#for-developers">For developers</a>
 </p>
 
 <p align="center"><img src="docs/hero.webp" alt="The camera comes down over the town under the title Spoken World; then five spoken requests, each changing the world as it is said: a house grows a floor, trees fill an empty field, a pond appears, ten houses appear, and the street turns to a rainy night" width="860"></p>
@@ -19,7 +18,7 @@ you are still standing in it. People who live there can be clicked and spoken wi
 
 **An open world with no end, and a film set.** Wander and keep building: there is no list of things you are allowed to
 ask for, so the game never runs out. Or direct it: "orbit this house… farther… record it", put three cameras on a bus,
-have someone walk out of a door, then turn the clip you recorded into live-action footage.
+have someone walk out of a door, and record the clip.
 
 **All of it generated, all of it in the browser.** Every house, tree, bus and person is made by code, and anything that
 does not exist yet is written by a language model while you wait. It is drawn with Three.js and nothing else: no game
@@ -39,13 +38,13 @@ engine, no model files, no install. Open a page and talk.
     </td>
     <td width="33%" align="center" valign="top">
       <img src="docs/film-it.gif" alt="Three cameras film a bus; the clip becomes live-action footage" width="100%"><br>
-      <b>Film it, then make it real</b><br>
-      <sub>"Film the bus with three cameras… now turn them into reality."</sub>
+      <b>Film it</b><br>
+      <sub>"Film the bus with three cameras."</sub>
     </td>
   </tr>
 </table>
 
-<p align="center"><sub>Cut from a film recorded in the real interface. Captions were added in the edit; where the model's wait is shortened, the corner of the picture says so; the last clip ends in footage a video model made from the recording.</sub></p>
+<p align="center"><sub>Cut from a film recorded in the real interface. Captions were added in the edit; where the model's wait is shortened, the corner of the picture says so.</sub></p>
 
 ## From a 3D sketch to footage
 
@@ -54,72 +53,34 @@ engine, no model files, no install. Open a page and talk.
 Top row: frames of clips recorded in the world. Bottom row: the same moment of the footage a video model made from each
 clip, keeping the camera move and where everything stands. The page comes with these pairs to play side by side.
 
-## Ways to run it
+## Run it
 
-It needs a model for nearly all of this: either you give the page a Gemini API key, or you run it as a Claude artifact
-on your own Claude account. Without a key the hosted page still lets you walk in and look around, as a preview: only
-the built-in commands work there, and the page says so.
+This fork is **Tinker-only**: the model is Thinking Machines' Inkling, reached through Tinker's Anthropic-compatible Messages API by a small
+local server. Voice input is your browser's own Web Speech API (Chrome). There is nothing else to sign up for.
 
-### 1. The hosted page, with your Gemini key
-
-Open https://spoken-world.vercel.app and paste a key from https://aistudio.google.com/apikey.
-The key stays in your browser and goes only to Google's Gemini API ([how the key is handled](SECURITY.md)).
-
-### 2. On your own computer
-
-Needs Node 18 or later. No dependencies to install.
+Needs Node 18 or later and Chrome. No dependencies to install.
 
 ```sh
-git clone https://github.com/ryannli/spoken-world && cd spoken-world
+git clone https://github.com/ryannli/spoken-world && cd spoken-world    # or your fork
+cat > .env <<'ENVEND'
+TINKER_BASE_URL=https://tinker.thinkingmachines.dev/services/tinker-prod/anthropic/api
+TINKER_API_KEY=your-tinker-key
+TINKER_MODEL=thinkingmachines/Inkling-2-Small
+ENVEND
 node site/build.mjs
 node site/serve.js          # http://localhost:8080
 ```
 
-To skip typing the key, put it in a file the local server reads (it is handed only to the page on localhost,
-kept in memory, never printed):
-
-```sh
-echo 'GEMINI_API_KEY=your-key' > .env      # .env is git-ignored
-```
-
-`GEMINI_API_KEY` in the environment, or `SW_ENV_FILE=/path/to/file`, work too.
-
-### 3. Your own deployment
-
-Import the repository into Vercel and press Deploy: `vercel.json` already says how to build
-(`node site/build.mjs`, output `site/dist`). Any static host works the same way; the microphone needs HTTPS
-and the `Permissions-Policy: microphone=(self)` header.
-
-### 4. As a Claude artifact
-
-`app/` on its own is a complete page that takes its model, speech-to-text and file saving from the Claude
-artifact runtime (`window.claude.use(...)`, wrapped in `app/js/host.js`). Published as an artifact from
-Claude, it needs no API key: each viewer has to be signed in to Claude (the page says so if they are not)
-and plays on their own Claude usage. The video model is not available
-there, so "Make it real" exports the clip for you to take elsewhere.
-
-## Cost
-
-The page calls Gemini with your key, so Google bills you. Measured in November 2026 with the models set in
-`site/gemini.js`; prices change, so treat these as orders of magnitude:
-
-| What you do | Model | About |
-| --- | --- | --- |
-| A command the local grammar understands (most edits, moves, camera notes) | none | free, instant |
-| A command that needs the model | Gemini 4 Hydrogen | $0.01, 2-4 s |
-| A person answering you | Gemini 4 Hydrogen | under $0.01 |
-| A new kind of object written for you | Gemini 4 Hydrogen | $0.07, about 30 s |
-| A whole place planned ("build a harbor") | Gemini 4 Hydrogen | $0.15 |
-| Voice input | Gemini 3.5 Transcribe Live | about $0.01 a minute |
-| "Make it real" on a clip | Gemini Omni | about $0.10 per second of video; no free tier |
-
-"Make it real" runs only when you press it. The page shows what each call used in `SW_HOST.usage` (browser console).
+`.env` is git-ignored. `TINKER_*` in the environment, or `SW_ENV_FILE=/path/to/file`, work too. `TINKER_MODEL` is optional.
+The page sends its model calls to the local server (`/__tinker/messages`), which adds the key, so the key never reaches the browser
+([how it is handled](SECURITY.md)). Hold Space to talk; press `/` to type instead.
+Each model call's latency and token counts are in `SW_HOST.usage` (browser console).
 
 ## For developers
 
 How it works inside is written up in [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Scenario scripts that run inside the page under Playwright, with a stand-in for the model (no key, nothing billed):
+Scenario scripts that run inside the page under Playwright, through the real local server and the Tinker host, with a stand-in for the model (no key, nothing billed):
 
 ```sh
 cd tests && npm install && npx playwright install chromium
@@ -138,6 +99,10 @@ Each prints what happened; they are read, not asserted. See the top of `tests/ru
 - People are simple figures.
 - The world is saved in the browser's local storage: one world per browser, no accounts, no sharing.
 - The scene description sent to the video model is written by rule from the world, not by a model; you can edit it before sending.
+
+## Credit
+
+Built on [spoken-world](https://github.com/ryannli/spoken-world) by ryannli (Apache-2.0). What this fork changed is listed in [NOTICE](NOTICE).
 
 ## License
 

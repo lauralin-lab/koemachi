@@ -152,12 +152,6 @@ body.filming #stage { object-fit: contain; background: #000; }
 .cmpdrop { grid-area: 1 / 1; display: grid; place-content: center; justify-items: center; gap: 6px; padding: 20px; text-align: center; cursor: pointer; border: 1.5px dashed rgba(244, 239, 230, .28); border-radius: 9px; margin: 12px; }
 .cmpdrop b { font-size: 15px; font-weight: 600; } .cmpdrop span { font-size: 12.5px; color: var(--paper-dim); max-width: 30em; line-height: 1.5; }
 .cmppane.has .cmpdrop { display: none; } .cmppane.over { border-color: var(--paper); }
-#cmpMake { position: absolute; left: 12px; right: 12px; bottom: 16%; z-index: 3; display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; }
-#cmpMake .mkst { font: 500 12.5px/1.3 var(--f-ui); color: var(--paper-dim); }
-#cmpMake .mkprompt { flex: 0 0 100%; max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 6px; }
-#cmpMake .mkprompt textarea { width: 100%; height: 132px; resize: vertical; font: 11.5px/1.45 var(--f-mono); color: var(--paper); background: rgba(10, 10, 12, .82); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; }
-#cmpMake .mkprompt div { display: flex; gap: 10px; align-items: center; justify-content: space-between; font: 400 11px/1.35 var(--f-ui); color: var(--paper-dim); text-align: left; }
-.cmppane.has #cmpMake { bottom: 14px; }
 .cmptag { position: absolute; left: 10px; top: 10px; z-index: 2; font-style: normal; font: 600 11.5px/1 var(--f-mono); padding: 6px 9px; border-radius: 6px; background: rgba(11, 13, 15, .72); pointer-events: none; }
 #cmpB .cmptag { left: auto; right: 10px; background: var(--cinnabar); color: #fff; }
 .cmpswap { position: absolute; right: 10px; bottom: 10px; z-index: 2; display: none; } .cmppane.has .cmpswap { display: block; } #cmpB .cmpswap { right: auto; left: 10px; }
@@ -370,6 +364,9 @@ body.cinema #top, body.cinema #bar, body.cinema #log, body.cinema #director, bod
 .scard .meta { padding: 6px 7px; }
 .scard .meta .nm { font-size: 12px; }
 #director .sbtn.wide { padding: 8px 10px; }
+#swCredit { position: fixed; left: 10px; bottom: 4px; z-index: 3; font: 500 9.5px/1 var(--f-ui, system-ui); letter-spacing: .03em; color: #fff; opacity: .4; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+#swCredit a { color: inherit; text-decoration: none; }
+#swCredit a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -521,5 +518,6 @@ body.cinema #top, body.cinema #bar, body.cinema #log, body.cinema #director, bod
 <script src="js/wet.js"></script>
 <script src="js/perf.js"></script>
 <script src="js/guide.js"></script>
+<div id="swCredit">Built on <a href="https://github.com/ryannli/spoken-world" target="_blank" rel="noopener">spoken-world</a> by <a href="https://github.com/ryannli" target="_blank" rel="noopener">ryannli</a> (Apache-2.0)</div>
 </body>
 </html>

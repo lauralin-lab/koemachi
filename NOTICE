@@ -1,6 +1,11 @@
 Spoken World
 Copyright 2026 ryannli (https://github.com/ryannli)
 
+This fork is built on spoken-world by ryannli (https://github.com/ryannli/spoken-world), Apache-2.0.
+Modifications in this fork: the Gemini provider, Gemini transcription and the in-page "Make it real" video feature (Gemini Omni) were removed;
+the model is now Thinking Machines' Inkling via Tinker, called through the local server (site/serve.js, site/tinker.js); voice input uses the
+browser's Web Speech API; the Claude artifact host and the Vercel deployment files were removed.
+
 Licensed under the Apache License, Version 2.0 (see LICENSE).
 
 This product includes or uses the following third-party work:

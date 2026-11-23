@@ -1,4 +1,4 @@
-// injected before page scripts: a stand-in for the viewer runtime
+// injected before page scripts: a stand-in for the model (window.claude.use("sample") is what the test bridge in run.js asks) and for the microphone
 (() => {
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const WINDMILL = `//@meta {"name":"windmill","label":"风车","size":[7,13,7],"motion":"none","params":{"height":{"d":12,"min":4,"max":40},"color":{"d":"#f2e9d8"},"blades":{"d":4,"min":2,"max":8,"int":true}},"dims":{"height":"height"}}

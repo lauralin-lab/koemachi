@@ -111,7 +111,7 @@
     U.togglePanel('director', 'bDir', true); paint(); showClip(c); if (U.canSave()) saveClip(c);
   };
   function saveClip(c) { if (!U.canSave()) return U.toast(T('这个窗口不能保存文件', 'This window cannot save files')); U.save({ filename: c.name, data: c.blob }).then(() => U.save({ filename: c.stem + '.txt', data: c.scene })).then(() => U.toast(T('已保存 ' + c.name + ' 和同名的场景描述 .txt：交给视频模型就能转成实拍', 'Saved ' + c.name + ' and its scene description (.txt): give both to a video model to make it real')), U.saveFail); }
-  function showClip(c) { clearPane(B); setPane(A, c.blob, c.name); aSrc = { clip: c, tile: -1 }; markEx(-1); note(YX.hooks && YX.hooks.makeReal ? T('你的片子 · ' + c.secs.toFixed(1) + ' 秒。在右边转成实拍，或者把别处做好的实拍视频拖进来', 'Your clip · ' + c.secs.toFixed(1) + ' s. Make it real on the right, or drop footage you made elsewhere') : T('你的片子 · ' + c.secs.toFixed(1) + ' 秒。在页面外用视频模型转成实拍后，把结果拖到右边，就能并排对比', 'Your clip · ' + c.secs.toFixed(1) + ' s. Once a video model outside this page has turned it into footage, drop the result on the right to compare')); paintMake(); open(); vA.addEventListener('loadeddata', () => { if (cmp.classList.contains('on')) play(); }, { once: true }); }
+  function showClip(c) { clearPane(B); setPane(A, c.blob, c.name); aSrc = { clip: c, tile: -1 }; markEx(-1); note(T('你的片子 · ' + c.secs.toFixed(1) + ' 秒。在页面外用视频模型转成实拍后，把结果拖到右边，就能并排对比', 'Your clip · ' + c.secs.toFixed(1) + ' s. Once a video model outside this page has turned it into footage, drop the result on the right to compare')); open(); vA.addEventListener('loadeddata', () => { if (cmp.classList.contains('on')) play(); }, { once: true }); }
   function paintClips() {
     const L = $('clipList'); if (!L) return; L.textContent = ''; { const cap = L.previousElementSibling; if (cap && cap.classList.contains('fhint')) cap.style.display = clips.length ? '' : 'none'; }
     if (!clips.length) { const e = document.createElement('div'); e.className = 'empty'; e.textContent = T('录好的片子会出现在这里，并立刻打开播放。', 'What you record appears here and opens straight away.'); L.appendChild(e); return; }
@@ -140,7 +140,7 @@
 
   /* ---------- compare ---------- */
   const cmp = $('cmp'), A = $('cmpA'), B = $('cmpB'), vA = A.querySelector('video'), vB = B.querySelector('video'), seek = $('cmpSeek'), div = $('cmpDiv'), stage = $('cmpStage');
-  let wipe = 0.5, raf = 0, seeking = false, aSrc = null, making = null;
+  let wipe = 0.5, raf = 0, seeking = false, aSrc = null;
   const has = (p) => p.classList.contains('has'), dur = (v) => (isFinite(v.duration) && v.duration > 0 ? v.duration : 0);
   const master = () => (has(A) ? vA : has(B) ? vB : null);
   function clearPane(pane) { if (pane === A) aSrc = null; const v = pane.querySelector('video'); try { v.pause(); } catch (e) {} if (v._url) { URL.revokeObjectURL(v._url); v._url = null; } v.removeAttribute('src'); try { v.load(); } catch (e) {} pane.classList.remove('has'); pane.title = ''; }
@@ -148,7 +148,7 @@
   function setPane(pane, file, name) {
     const v = pane.querySelector('video'); if (v._url) URL.revokeObjectURL(v._url);
     v._url = URL.createObjectURL(file); v.src = v._url; v.loop = false; if (pane === B) vA.loop = false; else if (!has(B)) v.loop = true; /* a clip on its own plays round and round */ v.muted = pane === A || $('cmpSnd').getAttribute('aria-pressed') !== 'true';
-    pane.classList.add('has'); pane.title = name || file.name || ''; v.load(); pause(); applyWipe(); markEx(-1); if (pane === A) aSrc = null; if (typeof paintMake === 'function') setTimeout(paintMake, 0);
+    pane.classList.add('has'); pane.title = name || file.name || ''; v.load(); pause(); applyWipe(); markEx(-1); if (pane === A) aSrc = null;
     // a clip straight from the recorder may not know its own length yet: seeking far past the end makes the browser work it out
     v.addEventListener('loadedmetadata', () => { if (!isFinite(v.duration)) { const back = () => { v.removeEventListener('timeupdate', back); try { v.currentTime = 0; } catch (e) {} }; v.addEventListener('timeupdate', back); try { v.currentTime = 1e101; } catch (e) {} } }, { once: true });
     if (pane === A && clip && file === clip.blob) { const own = clip; v.addEventListener('durationchange', () => { if (clip === own && isFinite(v.duration) && v.duration > 0) { own.secs = v.duration; paint(); } }); }
@@ -174,51 +174,6 @@
   const playing = () => { const m = master(); return !!m && !m.paused; };
   function seekTo(f) { const dA = dur(vA), dB = dur(vB); if (has(A) && dA) vA.currentTime = Math.min(dA - 0.01, f * dA); if (has(B) && dB) vB.currentTime = Math.min(dB - 0.01, f * dB); paintTime(); }
   function nudge(dt) { pause(); const m = master(); if (!m || !dur(m)) return; seekTo(Math.min(1, Math.max(0, (m.currentTime + dt) / dur(m)))); }
-  /* ---------- make it real, where the page has a video model of its own ----------
-     YX.hooks.makeReal({ blob, type, name, stem, secs, prompt, tile, tiles, signal, onState }) -> Promise<{ real: Blob, previz?: Blob }>.
-     Only some hosts give the page one; without it nothing shows here and the footage is made outside and dropped in. A clip of three pictures
-     side by side is turned one picture at a time: the host cuts that picture out (previz) and the comparison shows it beside its footage. */
-  const mk = document.createElement('div'); mk.id = 'cmpMake'; B.appendChild(mk);
-  const ANG = [['A', T('跟拍', 'chase')], ['B', T('侧拍', 'side')], ['C', T('低机位正面', 'low front')]];
-  /* what the video model is told for a clip: a fixed instruction (keep the camera move and where everything is, make it look real) and a description of the scene,
-     written from the world when the clip was recorded (time of day, weather, ground, what the camera saw). It can be read and rewritten before it is sent. */
-  const promptOf = (c) => (c.prompt != null ? c.prompt : BASE_PROMPT + ' Scene: ' + (c.sceneOnly || c.scene || YX.sceneText()));
-  let promptOpen = false;
-  function promptUI(src) {
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'sbtn sm'; b.textContent = T('提示词', 'Prompt') + (src.prompt != null ? T(' · 已改', ' · edited') : '') + (promptOpen ? ' ▴' : ' ▾'); b.title = T('看看、改改发给视频模型的提示词', 'Read and edit what the video model is told'); b.onclick = () => { promptOpen = !promptOpen; paintMake(); }; mk.appendChild(b);
-    if (!promptOpen) return;
-    const w = document.createElement('div'); w.className = 'mkprompt'; const ta = document.createElement('textarea'); ta.value = promptOf(src); ta.spellcheck = false; ta.setAttribute('aria-label', T('提示词', 'Prompt'));
-    const foot = document.createElement('div'), tip = document.createElement('span'); tip.textContent = T('前半段是固定要求，“Scene:” 之后是录制时根据世界自动写的场景描述。改了就按你改的发。', 'The first part is a fixed instruction; after “Scene:” is a description written from the world when this clip was recorded. Your edits are what gets sent.');
-    const rs = document.createElement('button'); rs.type = 'button'; rs.className = 'sbtn sm'; rs.textContent = T('恢复自动', 'Reset'); rs.style.display = src.prompt != null ? '' : 'none'; rs.onclick = () => { delete src.prompt; paintMake(); };
-    ta.oninput = () => { src.prompt = ta.value; rs.style.display = ''; }; for (const ev of ['keydown', 'keyup', 'keypress']) ta.addEventListener(ev, (e) => e.stopPropagation()); // typing here is typing, not walking
-    foot.append(tip, rs); w.append(ta, foot); mk.appendChild(w);
-  }
-  function paintMake() {
-    mk.textContent = ''; const fn = YX.hooks && YX.hooks.makeReal, src = aSrc && aSrc.clip;
-    if (making) { mk.style.display = ''; const s = document.createElement('span'); s.className = 'mkst'; s.textContent = making.text; const x = document.createElement('button'); x.type = 'button'; x.className = 'sbtn sm'; x.textContent = T('取消', 'Cancel'); x.onclick = () => { try { making.ctl.abort(); } catch (e) {} }; mk.append(s, x); return; }
-    if (!fn || !src || has(B)) { mk.style.display = 'none'; return; }
-    mk.style.display = ''; const go = (tile) => makeReal(src, tile);
-    if (src.tiles > 1 && aSrc.tile < 0) { const l = document.createElement('span'); l.className = 'mkst'; l.textContent = T('选一个机位转成实拍：', 'Make one angle real:'); mk.appendChild(l); (src.angles || ANG).slice(0, src.tiles).forEach((a, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'sbtn'; b.textContent = a[0] + ' · ' + a[1]; b.onclick = () => go(i); mk.appendChild(b); }); }
-    else { const b = document.createElement('button'); b.type = 'button'; b.className = 'sbtn'; b.textContent = T('转成实拍', 'Make it real'); b.onclick = () => go(src.tiles > 1 ? aSrc.tile : -1); mk.appendChild(b); }
-    promptUI(src);
-  }
-  async function makeReal(c, tile) {
-    if (making) return; const ctl = new AbortController(), t0 = performance.now(); making = { ctl, text: '' };
-    const tickText = (what) => { making.text = what + ' ' + fmt((performance.now() - t0) / 1000); const s = mk.querySelector('.mkst'); if (s) s.textContent = making.text; else paintMake(); };
-    let stage = T('准备中…', 'Getting ready…'); tickText(stage); const iv = setInterval(() => making && tickText(stage), 500);
-    const prompt = promptOf(c);
-    try {
-      const r = await YX.hooks.makeReal({ blob: c.blob, type: c.type || c.blob.type, name: c.name, stem: c.stem, secs: c.secs, prompt, tile, tiles: c.tiles || 1, signal: ctl.signal, onState: (s) => { stage = s; } });
-      if (!r || !r.real) throw new Error('no video');
-      const tag = tile >= 0 ? '-' + ((c.angles || ANG)[tile] || ['X'])[0] : '';
-      if (r.previz) { setPane(A, r.previz, c.stem + tag + '.previz'); aSrc = { clip: c, tile }; }
-      setPane(B, r.real, c.stem + tag + '.real.mp4'); play();
-      note(T('实拍 · 由视频模型生成', 'Real footage · made by the video model'));
-      if (U.canSave()) U.save({ filename: c.stem + tag + '.real.mp4', data: r.real }).catch(() => {});
-    } catch (e) {
-      if (e && e.name === 'AbortError') U.toast(T('已取消', 'Cancelled')); else U.toast(T('没能转成实拍：', 'Could not make it real: ') + ((e && (e.message || e.code)) || e));
-    } finally { clearInterval(iv); making = null; paintMake(); }
-  }
   /* examples that ship with the page: the same shot as 3D previz and as generated footage */
   const EX = [['01-arrival', '升降落幅 · 黄昏主街', 'Crane down · main street at dusk'], ['02-bus-chase', '航拍跟车 · 双层巴士', 'Drone chase · double-decker'], ['04-morning-ride', '低机位跟拍 · 清晨骑行', 'Tracking shot · morning ride'], ['05-bakery', '室内推进 · 面包店', 'Push in · inside the bakery'], ['03-fountain-night', '环绕 · 夜晚的喷泉', 'Orbit · fountain at night']];
   let exNow = -1, autoEx = -1;
@@ -237,7 +192,7 @@
     if (exBlobs.has(url)) return show(exBlobs.get(url));
     fetch(url).then((r) => (r.ok ? r.blob() : Promise.reject(new Error('HTTP ' + r.status)))).then((b) => { const mp4 = new Blob([b], { type: 'video/mp4' }); exBlobs.set(url, mp4); show(mp4); }).catch((e) => direct(String((e && e.message) || e || '').slice(0, 80)));
   }
-  function showEx(i, auto) { aSrc = null; setTimeout(paintMake, 0); const e = EX[i]; if (!e) return; pause(); note(''); vA.loop = false; setUrl(A, 'media/' + e[0] + '.previz.mp4', e[0]); setUrl(B, 'media/' + e[0] + '.real.mp4', e[0] + ' real'); applyWipe(); markEx(i); autoEx = auto ? i : -1; }
+  function showEx(i, auto) { aSrc = null; const e = EX[i]; if (!e) return; pause(); note(''); vA.loop = false; setUrl(A, 'media/' + e[0] + '.previz.mp4', e[0]); setUrl(B, 'media/' + e[0] + '.real.mp4', e[0] + ' real'); applyWipe(); markEx(i); autoEx = auto ? i : -1; }
   function paintGal() { const g = $('cmpGal'); g.textContent = ''; const l = document.createElement('span'); l.textContent = T('示例', 'Examples'); g.appendChild(l); EX.forEach((e, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'sbtn'; b.dataset.i = i; b.textContent = T(e[1], e[2]); b.setAttribute('aria-pressed', String(i === exNow)); b.onclick = () => showEx(i, true); g.appendChild(b); }); }
   function open() {
     if (mr) return; U.closePops(); if (document.pointerLockElement) document.exitPointerLock();
