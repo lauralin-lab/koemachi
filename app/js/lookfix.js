@@ -7,7 +7,7 @@
 'use strict';
 (function () {
   const YX = window.YX, T = YX.T, M = YX.mind, W = YX.world, MAX_BYTES = 1.5 * 1024 * 1024, WIDTH = 1024;
-  const L = (YX.lookFix = { enabled: true, busy: 0, rounds: 2, history: [] }); // history: every check, newest last (for the console and the tests)
+  const L = (YX.lookFix = { enabled: true, busy: 0, rounds: 2, history: [], skipped: [], outcomes: [] }); // history: every check, newest last (for the console and the tests)
 
   /* ---------- the picture ---------- */
   L.capture = function (o) { // -> { b64, bytes } | null

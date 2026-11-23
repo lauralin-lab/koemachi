@@ -953,11 +953,13 @@
     const feed = streamer(onOp);
     try {
       const tier = big ? (M.quality === 'max' ? 'complex' : 'default') : 'quick';
-      const res = await M.sample(routePrompt(text, rest, ph.view, doneMsgs, ph.ctx.group) + (big ? (YX.lang === 'en' ? CARE_EN : CARE_ZH) : ''), { modelTier: tier, cache: false, signal: ctl.signal, onText: (u) => { try { feed(u.text, false); } catch (e) { console.warn(e); } } });
+      const sent = routePrompt(text, rest, ph.view, doneMsgs, ph.ctx.group) + (big ? (YX.lang === 'en' ? CARE_EN : CARE_ZH) : '');
+      const res = await M.sample(sent, { modelTier: tier, cache: false, signal: ctl.signal, onText: (u) => { try { feed(u.text, false); } catch (e) { console.warn(e); } } });
       feed(res.text, true); entry.model = res.modelTierApplied || tier;
       if (again && !n) { entry.msgs.push(T('这件事已经纠正过几次了：换更强的模型，连同周围一起重新安排…', 'This has been corrected a few times: handing it to the bigger model to rearrange it with its surroundings…')); logUp(entry); return route(text, rest, ph, entry, doneMsgs, ops, true); } // the small model judged that the player is struggling
       entry.abort = null; entry.first = first ? Math.round(first - entry.t0) : 0;
       if (!n) logEnd(entry, 'fail', T('没听懂这句，换个说法试试', 'Did not catch that. Try saying it another way')); else logEnd(entry, entry.warn && n === 1 ? 'fail' : 'ok');
+      if (entry.status === 'ok' && YX.sessions) { const i = sent.indexOf('\n\n## Current scene\n'); if (i > 0 && !big) YX.sessions.record({ kind: 'route', system: sent.slice(0, i), user: sent.slice(i + 2), output: res.text, since: entry.t0 }); } // a kept result, unless it is undone soon (sessions.js)
     } catch (e) { entry.abort = null; if (e && e.text) { try { feed(e.text, true); } catch (x) {} } logEnd(entry, n ? 'ok' : 'fail', failText(e)); }
     finish(text, ops, entry.msgs, ph);
   }
@@ -1071,33 +1073,48 @@
     rebuild();
     for (const [x, g] of ghosts) { x.holder.add(g); YX.tween(0.5, (k) => g.traverse((c) => { if (c.material) for (const m of [].concat(c.material)) m.opacity = 1 - k; }), { done: () => { x.holder.remove(g); g.traverse((c) => { if (c.material) for (const m of [].concat(c.material)) m.dispose(); }); } }); }
   }
+  async function checkOnce(o, ask, r) { // one look, with a time limit; one more try if it fails; null = give up on this one
+    let last = null;
+    for (let a = 0; a < 2; a++) {
+      const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 45000);
+      try { return await YX.lookFix.check(o, ask, r, ctl.signal); } catch (e) { last = e; if (!o || o.dead) throw e; console.warn('look & fix: check failed' + (a ? '' : ', trying once more'), e); } finally { clearTimeout(to); }
+    }
+    YX.lookFix.skipped.push({ ask, round: r, reason: String((last && (last.message || last.code)) || last) }); return null;
+  }
   async function lookFixRun(job, type, code, o) {
-    const LF = YX.lookFix; if (!LF || !LF.enabled || !M.sample || o.dead) return;
+    const LF = YX.lookFix; if (!LF || !LF.enabled || !M.sample || o.dead) { keepInvent(job, code); return; }
     const ask = ((job.entry && job.entry.text) ? job.entry.text + ' — ' : '') + job.label + ': ' + job.brief, st = LF.status(job.label), stamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14), base = stamp + '-' + type.replace(/[^\w]/g, '_').slice(0, 24);
-    const live = () => Array.from(W.objs.values()).filter((x) => x.type === type && !x.dead), saved = [], fixedWhat = []; LF.busy++;
+    const live = () => Array.from(W.objs.values()).filter((x) => x.type === type && !x.dead), saved = [], fixedWhat = [], t0 = performance.now(); let cur = code, outcome = 'unknown', res = null; LF.busy++;
     try {
       st.say(T('检查中…', 'Checking…')); await new Promise((ok) => setTimeout(ok, 1300)); // the new object has finished appearing
-      if (o.dead) return st.end('', '');
-      let res = await LF.check(o, ask, 0), cur = code;
+      if (o.dead) { outcome = 'removed'; return st.end('', ''); }
+      res = await checkOnce(o, ask, 0); if (!res) { outcome = 'check skipped'; return st.end(T('已跳过检查', 'Check skipped'), ''); }
       for (let r = 1; !res.match && r <= LF.rounds; r++) {
         st.say(T('修正中…（第 ' + r + ' 轮）', 'Fixing… (round ' + r + ')'), 'fix'); const before = res;
         const sc = await genCode(job, 'default', { preview: false, draft: cur.slice(0, 9000), look: res, label: 'look-fix r' + r });
-        const meta = await validate(sc, job), m2 = Object.assign({}, meta, { name: type }), xs = live(); if (!xs.length) return st.end('', '');
+        const meta = await validate(sc, job), m2 = Object.assign({}, meta, { name: type }), xs = live(); if (!xs.length) { outcome = 'removed'; return st.end('', ''); }
         YX.registerCustom(m2, sc.code); cur = sc.code;
         swapFade(xs, () => { for (const x of xs) { x.params = YX.fillParams(G[type], x.params, null, null); YX.rebuild(x, {}); } });
         for (const p of before.problems) if (!fixedWhat.includes(p)) fixedWhat.push(p);
         st.say(T('再看一遍…', 'Checking again…'));
         await new Promise((ok) => setTimeout(ok, 700)); // the new look is in, then looked at
-        const o2 = live()[0]; if (!o2) return st.end('', '');
-        res = await LF.check(o2, ask, r);
-        saved.push({ round: r, problems: before.problems, fix: before.fix, before: base + '-r' + r + '-before.jpg', after: base + '-r' + r + '-after.jpg', match: res.match, afterProblems: res.problems });
-        LF.save(base + '-r' + r + '-before.jpg', before.shot.b64); LF.save(base + '-r' + r + '-after.jpg', res.shot.b64);
+        const o2 = live()[0]; if (!o2) { outcome = 'removed'; return st.end('', ''); }
+        const again = await checkOnce(o2, ask, r);
+        saved.push({ round: r, problems: before.problems, fix: before.fix, before: base + '-r' + r + '-before.jpg', after: again ? base + '-r' + r + '-after.jpg' : null, match: again ? again.match : null, afterProblems: again ? again.problems : null });
+        LF.save(base + '-r' + r + '-before.jpg', before.shot.b64); if (again) LF.save(base + '-r' + r + '-after.jpg', again.shot.b64);
+        if (!again) { outcome = 'fixed, final check skipped'; return st.end(T('已修正（最后一次检查已跳过）', 'Fixed (the last check was skipped)'), 'fix'); }
+        res = again;
       }
-      if (saved.length) LF.save(base + '.json', JSON.stringify({ type, label: job.label, ask, rounds: saved }, null, 1), true);
+      outcome = res.match ? (saved.length ? 'fixed' : 'looks right') : 'still off';
       if (res.match) st.end(saved.length ? T('已修正：' + fixedWhat.join('，'), 'Fixed: ' + fixedWhat.join(', ')) : T('看起来没问题', 'Looks right'), saved.length ? 'fix' : 'ok');
       else st.end(T('还有问题：' + res.problems.join('，'), 'Still off: ' + res.problems.join(', ')), 'fix');
-    } catch (e) { console.warn('look & fix', e); st.end(T('没能检查', 'Could not check'), ''); }
-    finally { LF.busy--; }
+    } catch (e) { outcome = 'error: ' + String((e && (e.message || e.code)) || e).slice(0, 120); console.warn('look & fix', e); st.end(T('没能检查', 'Check skipped'), ''); }
+    finally { LF.busy--; LF.save(base + '.json', JSON.stringify({ type, label: job.label, ask, outcome, ms: Math.round(performance.now() - t0), first: res && saved.length ? { problems: saved[0].problems, fix: saved[0].fix } : null, rounds: saved, skipped: LF.skipped.filter((x) => x.ask === ask) }, null, 1), true); LF.outcomes.push({ type, label: job.label, outcome, rounds: saved.length, ms: Math.round(performance.now() - t0) }); keepInvent(job, cur); }
+  }
+  function keepInvent(job, code) { // what the model wrote for a new kind of object, as it stands at the end, is a kept result (see sessions.js)
+    if (!YX.sessions || !code) return;
+    const p = inventPrompt(job), i = p.search(/\n## (Output format|输出格式)\n/); if (i < 0) return;
+    YX.sessions.record({ kind: 'invent', system: p.slice(i + 2), user: p.slice(0, i), output: code, since: job.entry && job.entry.t0 });
   }
   let inventRunning = 0; const waiters = [];
   function slot() { if (inventRunning < 2) { inventRunning++; return Promise.resolve(); } return new Promise((r) => waiters.push(r)); }

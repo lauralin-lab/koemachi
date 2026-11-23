@@ -29,6 +29,17 @@ async function keepShot(q, r) { // Look & Fix pictures and notes: written to dat
   fs.writeFileSync(path.join(dir, b.file), b.text != null ? String(b.text) : Buffer.from(String(b.data || ''), 'base64'));
   json(r, 200, { ok: true });
 }
+const SESSIONS = () => path.join(DATA, 'sessions.jsonl');
+const sessionCount = () => { try { return fs.readFileSync(SESSIONS(), 'utf8').split('\n').filter(Boolean).length; } catch (e) { return 0; } };
+async function keepSession(q, r) { // one kept model result, a chat example, appended as a line
+  if (!sameOrigin(q)) return json(r, 403, { error: { message: 'forbidden' } });
+  if (q.method === 'GET') return json(r, 200, { count: sessionCount() });
+  let raw = ''; for await (const ch of q) { raw += ch; if (raw.length > 2e6) return json(r, 413, { error: { message: 'too large' } }); }
+  let b; try { b = JSON.parse(raw); } catch (e) { return json(r, 400, { error: { message: 'bad json' } }); }
+  if (!b || !Array.isArray(b.messages) || b.messages.length !== 3 || !b.messages.every((m) => m && typeof m.content === 'string')) return json(r, 400, { error: { message: 'not a chat example' } });
+  fs.mkdirSync(DATA, { recursive: true }); fs.appendFileSync(SESSIONS(), JSON.stringify({ messages: b.messages }) + '\n');
+  json(r, 200, { ok: true, count: sessionCount() });
+}
 async function tinkerProxy(q, r) { // the page's Messages request, with the key and the model filled in here, answered as the stream Tinker sends it
   if (!sameOrigin(q)) return json(r, 403, { error: { message: 'forbidden' } });
   const c = tinkerCfg(); if (!c.url || !c.key) return json(r, 500, { error: { type: 'not_configured', message: 'Set TINKER_BASE_URL and TINKER_API_KEY in .env, then restart the server.' } });
@@ -46,6 +57,7 @@ http.createServer((q, r) => {
   let p = decodeURIComponent(q.url.split('?')[0]);
   if (p === '/__config') { if (!sameOrigin(q)) return json(r, 403, {}); const c = tinkerCfg(); return json(r, 200, { model: c.model, ready: !!(c.url && c.key) }); } // never the key
   if (p === '/__tinker/messages' && q.method === 'POST') { tinkerProxy(q, r); return; }
+  if (p === '/__session' && (q.method === 'POST' || q.method === 'GET')) { keepSession(q, r).catch(() => { if (!r.headersSent) json(r, 500, {}); }); return; }
   if (p === '/__shot' && q.method === 'POST') { keepShot(q, r).catch(() => { if (!r.headersSent) json(r, 500, {}); }); return; }
   if (p === '/') p = '/index.html';
   const f = path.join(ROOT, p); if (!f.startsWith(ROOT + path.sep) || path.basename(f).startsWith('.') || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { r.writeHead(404); r.end('not found'); return; }
