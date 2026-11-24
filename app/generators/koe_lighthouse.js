@@ -5,7 +5,7 @@
 (function () {
   const YX = window.YX, C = YX.koe, mix = YX.mixHex;
   YX.GEN.koe_lighthouse = {
-    label: '灯塔', cls: 'building', solid: 'trunk', face: 'road', light: { pos: [0, 9.4, 0], color: '#ffe9a8', power: 1.6, always: true }, nouns: ['灯塔', '小灯塔', '海港灯塔', '航标灯', 'lighthouse', 'harbour light', 'harbor lighthouse', '灯台', '灯台'],
+    label: '灯塔', en: 'Lighthouse', cls: 'building', solid: 'trunk', face: 'road', light: { pos: [0, 9.4, 0], color: '#ffe9a8', power: 1.6, always: true }, nouns: ['灯塔', '小灯塔', '海港灯塔', '航标灯', 'lighthouse', 'harbour light', 'harbor lighthouse', '灯台', '灯台'],
     params: { height: { d: 9, min: 4, max: 30 } }, dims: { height: 'height', size: 'height' }, foot: () => [4, 4],
     build(b, p) {
       const H = p.height, k = H / 9;

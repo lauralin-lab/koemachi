@@ -5,7 +5,7 @@
 (function () {
   const YX = window.YX, C = YX.koe, mix = YX.mixHex;
   YX.GEN.torii = {
-    label: '鸟居', cls: 'street', solid: false, face: 'road', mainColor: 'color', nouns: ['鸟居', '神社大门', '红色鸟居', '神门', 'torii', 'shrine gate', 'torii gate', '鳥居'],
+    label: '鸟居', en: 'Torii gate', cls: 'street', solid: false, face: 'road', mainColor: 'color', nouns: ['鸟居', '神社大门', '红色鸟居', '神门', 'torii', 'shrine gate', 'torii gate', '鳥居'],
     params: { height: { d: 4.8, min: 2, max: 20 }, width: { d: 4.2, min: 2, max: 16 }, color: { d: C.vermilion, color: 1 }, shimenawa: { d: false, bool: 1 } }, dims: { height: 'height', width: 'width', size: 'height' }, foot: (p) => [p.width + 1, 1.2],
     build(b, p) {
       const H = p.height, W = p.width, r = H * 0.04, c = p.color, dk = '#1d1b1a';

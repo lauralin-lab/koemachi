@@ -4,7 +4,7 @@
 (function () {
   const YX = window.YX, C = YX.koe, mix = YX.mixHex;
   YX.GEN.kuromatsu = {
-    label: '黑松', cls: 'nature', solid: 'trunk', face: 'random', nouns: ['黑松', '松树', '海边松树', '松', '盆景松', 'black pine', 'pine tree', 'japanese pine', 'matsu', '松', '黒松'],
+    label: '黑松', en: 'Black pine', cls: 'nature', solid: 'trunk', face: 'random', nouns: ['黑松', '松树', '海边松树', '松', '盆景松', 'black pine', 'pine tree', 'japanese pine', 'matsu', '松', '黒松'],
     params: { height: { d: 7, min: 2, max: 20 }, lean: { d: 0.22, min: -0.6, max: 0.6 } }, dims: { height: 'height', size: 'height', width: 'height' }, foot: (p) => [p.height * 0.5, p.height * 0.5],
     build(b, p, rand) {
       const H = p.height, bark = '#4a3b33', tr = H * 0.03 + 0.07, lx = p.lean * H, G = ['#2f5a3a', '#376844', '#2a4f36', '#3f7550'];

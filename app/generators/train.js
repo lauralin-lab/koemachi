@@ -14,7 +14,7 @@
     if (back) { b.box(w - 0.5, 0.9, 0.06, '#26343f', 0, y0 + 1.7, z0 - len / 2 - 0.01); }
   }
   YX.GEN.train = {
-    label: '电车', cls: 'vehicle', float: true, solid: false, face: 'road', nouns: ['电车', '火车', '列车', '小火车', '柴油列车', 'train', 'railcar', 'local train', '電車', '列車', '気動車'],
+    label: '电车', en: 'Train', cls: 'vehicle', float: true, solid: false, face: 'road', nouns: ['电车', '火车', '列车', '小火车', '柴油列车', 'train', 'railcar', 'local train', '電車', '列車', '気動車'],
     params: { cars: { d: 2, min: 1, max: 2, int: 1 }, lit: { d: false, bool: 1 } }, dims: { width: 'cars' }, foot: (p) => [3, p.cars * 17],
     build(b, p) {
       const len = 16, gap = 1.1, total = p.cars * len + (p.cars - 1) * gap;

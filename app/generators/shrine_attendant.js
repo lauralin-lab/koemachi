@@ -5,7 +5,7 @@
 (function () {
   const YX = window.YX, C = YX.koe, mix = YX.mixHex;
   YX.GEN.shrine_attendant = {
-    label: '神社工作人员', cls: 'creature', solid: false, face: 'none', block: false, nouns: ['神社工作人员', '神职人员', '巫女', '神主', '扫地的人', 'shrine attendant', 'shrine keeper', 'priest', '神職', '巫女さん'],
+    label: '神社工作人员', en: 'Shrine attendant', cls: 'creature', solid: false, face: 'none', block: false, nouns: ['神社工作人员', '神职人员', '巫女', '神主', '扫地的人', 'shrine attendant', 'shrine keeper', 'priest', '神職', '巫女さん'],
     params: { shirt: { d: '#f4f1ea', color: 1 }, hakama: { d: '#8fb4c9', color: 1 }, height: { d: 1.65, min: 1, max: 3 } }, dims: { height: 'height' }, foot: () => [1.2, 1.2], mainColor: 'hakama',
     build(b, p, rand) {
       const k = p.height / 1.65, skin = '#f1c9a5';

@@ -5,7 +5,7 @@
 (function () {
   const YX = window.YX, C = YX.koe;
   YX.GEN.shop_ramen = {
-    label: '拉面店', cls: 'building', solid: 'box', face: 'road', nouns: ['拉面店', '拉面馆', '面馆', '拉面', 'ramen shop', 'ramen', 'noodle shop', 'ラーメン屋', 'ラーメン店'],
+    label: '拉面店', en: 'Ramen shop', cls: 'building', solid: 'box', face: 'road', nouns: ['拉面店', '拉面馆', '面馆', '拉面', 'ramen shop', 'ramen', 'noodle shop', 'ラーメン屋', 'ラーメン店'],
     params: { floors: { d: 2, min: 1, max: 3, int: 1 }, width: { d: 6.4, min: 4, max: 10 }, depth: { d: 8, min: 5, max: 12 }, sign: { d: 'ラーメン', text: 1 }, lit: { d: true, bool: 1 } }, dims: { height: 'floors', width: 'width', depth: 'depth' }, foot: (p) => [p.width + 1, p.depth + 1.5],
     build(b, p, rand) {
       const w = p.width, d = p.depth, S = C.shopFront(b, rand, { w, d, floors: p.floors, wall: '#ece3cf', sign: p.sign, signBg: '#1f1b19', signFg: '#f4efe0', awning: [C.vermilion, '#f4efe0'], noren: { color: '#a42d22', text: 'ラーメン', fg: '#f4efe0' }, lit: p.lit }), fz = S.fz, y = S.base;

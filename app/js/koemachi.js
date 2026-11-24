@@ -10,8 +10,17 @@
   const SEA_Y = (YX.SEA_LEVEL = 0.1); // the still water (sea.js builds the surface; the town is built before that file loads)
   const FACE = { S: 0, N: 180, E: 90, W: 270 }; // the direction a front faces, as a rot in degrees
 
+  /* the grammar's word list is made when the generators load: remake it now that Koemachi's are in, and let the words cherry / sakura / maple mean Koemachi's own
+     seasonal trees, and street light / street lamp its concrete street light, rather than the generic ones of the same name */
+  const nouns0 = YX.buildNouns;
+  YX.buildNouns = function () {
+    nouns0.apply(this, arguments); const TREEWORD = /樱|桜|cherry|sakura|maple|枫|楓|紅葉|红叶|もみじ/i; YX.NOUNS = YX.NOUNS.filter((n) => !(n.type === 'tree' && TREEWORD.test(n.w)) && !(n.type === 'lamp' && /street|街灯|路灯|街路灯/.test(n.w)));
+    const en = new Map(); for (const n of YX.NOUNS) { const k = n.w.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); if (/^[a-z0-9 ']+$/.test(k) && !en.has(k)) en.set(k, { type: n.type, params: n.params, fam: n.fam || null, w: k }); } YX.EN_NOUNS = en;
+  };
+  YX.buildNouns();
+
   YX.buildTown = function () {
-    YX.clearWorld(); W.nextId = 1; W.shots = []; W.focusId = null;
+    YX.clearWorld(); W.nextId = 1; W.shots = []; W.focusId = null; W.env.season = 'spring'; C.season = 'spring'; // the town begins in cherry-blossom season
     const R = YX.rng(20260101), rr = (a, b) => a + R() * (b - a), pk = (arr) => arr[Math.floor(R() * arr.length)], ri = (a, b) => Math.floor(rr(a, b + 1));
     const add = (type, x, z, deg, params, extra) => YX.spawn(Object.assign({ type, x, z, rot: (deg || 0) * DEG, params: params || {}, seed: Math.floor(R() * 4e9) + 1 }, extra || {}));
     const X = { add, R, rr, pk, ri };
@@ -134,6 +143,10 @@
     const bike = add('bicycle', 60, 14, 90, { color: '#2e6da4' }), rider = add('person', 60, 14, 90, { pose: 'ride', shirt: '#d9534f', pants: '#2f3e55', height: 1.7 });
     try { YX.attachTo(rider, bike); bike.route = { pts: [[52, 0, 13], [118, 0, 13], [121, 0, 15], [52, 0, 15], [49, 0, 13]], loop: true, speed: 3.4 }; bike.motion = 'route'; YX.initMotion(bike); } catch (e) { console.warn('cyclist', e); }
   }
+
+  /* where the summer festival hangs its lanterns: [x, z, rot, length, height] (seasons.js puts them up and takes them down) */
+  C.festival = [[-45, -14, 0, 22, 4.6], [-20, -14, 0, 22, 4.6], [22, -14, 0, 22, 4.6], [50, -14, 0, 22, 4.6], [-30, -34, 0, 24, 4.6], [30, -34, 0, 24, 4.6], [-4.4, -79, 90, 14, 3.4], [4.4, -79, 90, 14, 3.4],
+    [-72, 45, 0, 28, 4.4], [-30, 45, 0, 28, 4.4], [34, 8, 90, 22, 4.4], [34, 40, 90, 8, 4.0]];
 
   /* golden hour over the sea: low warm sun in the south-west, a light haze */
   function lighting() {

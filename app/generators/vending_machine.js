@@ -4,7 +4,7 @@
 (function () {
   const YX = window.YX, C = YX.koe;
   YX.GEN.vending_machine = {
-    label: '自动贩卖机', cls: 'street', solid: 'box', face: 'road', mainColor: 'color', nouns: ['自动贩卖机', '贩卖机', '售货机', 'vending machine', 'vending', '自販機', '自動販売機'],
+    label: '自动贩卖机', en: 'Vending machine', cls: 'street', solid: 'box', face: 'road', mainColor: 'color', nouns: ['自动贩卖机', '贩卖机', '售货机', 'vending machine', 'vending', '自販機', '自動販売機'],
     params: { color: { d: '#2f6db0', color: 1, pick: ['#2f6db0', '#c93a2c', '#e8e4da', '#3f8a5a'] }, wide: { d: false, bool: 1 } }, dims: { size: 'wide' }, foot: (p) => [p.wide ? 2.2 : 1.1, 0.9],
     build(b, p, rand) {
       const w = p.wide ? 2.0 : 0.95, h = 1.85, d = 0.75;

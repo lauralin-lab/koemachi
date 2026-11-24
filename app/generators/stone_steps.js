@@ -6,7 +6,7 @@
   const YX = window.YX, C = YX.koe, mix = YX.mixHex, RISER = 0.18;
   const steps = (p) => Math.max(1, Math.round(p.rise / RISER));
   YX.GEN.stone_steps = {
-    label: '石阶', cls: 'ground', solid: false, face: 'none', block: false, nouns: ['石阶', '台阶', '楼梯', '阶梯', '石梯', 'stone steps', 'steps', 'stairs', '階段', '石段'],
+    label: '石阶', en: 'Stone steps', cls: 'ground', solid: false, face: 'none', block: false, nouns: ['石阶', '台阶', '楼梯', '阶梯', '石梯', 'stone steps', 'steps', 'stairs', '階段', '石段'],
     params: { width: { d: 3.2, min: 1, max: 30 }, rise: { d: 3, min: 0.2, max: 40 }, tread: { d: 0.34, min: 0.2, max: 1 }, rail: { d: true, bool: 1 } },
     dims: { width: 'width', height: 'rise', size: 'width' }, foot: (p) => [p.width + 1, steps(p) * p.tread],
     floor(p, lx, lz) { const n = steps(p), run = n * p.tread; if (Math.abs(lx) > p.width / 2 + 0.3 || Math.abs(lz) > run / 2) return null; const i = Math.max(0, Math.min(n - 1, Math.floor((run / 2 - lz) / p.tread))); return ((i + 1) * p.rise) / n; },

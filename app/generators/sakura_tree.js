@@ -6,8 +6,8 @@
   const YX = window.YX, C = YX.koe, mix = YX.mixHex;
   const CROWN = { spring: ['#f6c3d3', '#f9d6e0', '#f2a9c4', '#fbe3ea'], summer: ['#5f9a4a', '#6faa52', '#4f8a44', '#7ab55c'], autumn: ['#d98a3a', '#e3a645', '#c8662b', '#e8b957'] };
   YX.GEN.sakura_tree = {
-    label: '樱花树', cls: 'nature', solid: 'trunk', face: 'random', nouns: ['樱花树', '樱花', '樱树', '樱桃树', 'cherry tree', 'sakura', 'cherry blossom', '桜', '桜の木'],
-    params: { height: { d: 6.2, min: 2, max: 20 }, season: { d: 'spring', opts: ['spring', 'summer', 'autumn', 'winter'] } }, dims: { height: 'height', size: 'height', width: 'height' }, foot: (p) => [p.height * 0.5, p.height * 0.5],
+    label: '樱花树', en: 'Cherry tree', cls: 'nature', solid: 'trunk', face: 'random', nouns: ['樱花树', '樱花', '樱树', '樱桃树', 'cherry tree', 'sakura', 'cherry blossom', '桜', '桜の木'],
+    params: { height: { d: 6.2, min: 2, max: 20 }, season: { get d() { return C.season; }, opts: ['spring', 'summer', 'autumn', 'winter'] } }, dims: { height: 'height', size: 'height', width: 'height' }, foot: (p) => [p.height * 0.5, p.height * 0.5],
     build(b, p, rand) {
       const H = p.height, bark = '#4a3a35', lean = (rand() - 0.5) * H * 0.18, tr = H * 0.028 + 0.05, cols = CROWN[p.season];
       b.tube([[0, 0, 0], [lean * 0.4, H * 0.22, 0], [lean * 0.8, H * 0.38, 0.1 * H * 0.1], [lean, H * 0.5, 0]], tr, bark, { sides: 8 }); b.cyl(tr * 1.3, tr * 1.8, H * 0.05, bark, 0, 0, 0, { sides: 9 });

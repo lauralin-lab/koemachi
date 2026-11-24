@@ -5,7 +5,7 @@
 (function () {
   const YX = window.YX, C = YX.koe;
   YX.GEN.utility_pole = {
-    label: '电线杆', cls: 'street', solid: 'trunk', face: 'none', nouns: ['电线杆', '电杆', '电线', 'utility pole', 'telephone pole', 'power pole', '電柱'],
+    label: '电线杆', en: 'Utility pole', cls: 'street', solid: 'trunk', face: 'none', nouns: ['电线杆', '电杆', '电线', 'utility pole', 'telephone pole', 'power pole', '電柱'],
     params: { height: { d: 8.2, min: 5, max: 14 }, span: { d: 26, min: 0, max: 60 }, transformer: { d: false, bool: 1 } }, dims: { height: 'height', size: 'height' }, foot: () => [0.6, 0.6],
     build(b, p) {
       const h = p.height; b.cyl(0.11, 0.16, h, '#6b5a48', 0, 0, 0, { sides: 8 });

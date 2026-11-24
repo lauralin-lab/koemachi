@@ -18,8 +18,8 @@ const DATA = fs.mkdtempSync(path.join(os.tmpdir(), 'sw-data-')); // what the pag
 const { chromium } = require('playwright');
 
 const here = __dirname;
-const NATIVE = new Set('lookfix1 session1 koemachi1'.split(' ')); // scenarios about this fork's own features: they run in Koemachi
-const SIM = new Set('t1 d4 r1 w1 dr1 m1 wd1 aim1 people1 rig1 grav1 guide1 aim2 rev1 out1 rig2 lights1 route1 aim3 rig3 pend1 door1 koemachi1'.split(' '));
+const NATIVE = new Set('lookfix1 session1 koemachi1 ja1 seasons1'.split(' ')); // scenarios about this fork's own features: they run in Koemachi
+const SIM = new Set('t1 d4 r1 w1 dr1 m1 wd1 aim1 people1 rig1 grav1 guide1 aim2 rev1 out1 rig2 lights1 route1 aim3 rig3 pend1 door1 koemachi1 ja1 seasons1'.split(' '));
 const three = [path.join(here, 'node_modules/three/build/three.min.js')].find((f) => fs.existsSync(f)); // served in place of the CDN copy when installed, so the tests run offline
 
 async function serveTinker() { // the real local server, in tinker mode, over a fresh build

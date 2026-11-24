@@ -4,7 +4,7 @@
 (function () {
   const YX = window.YX, C = YX.koe, mix = YX.mixHex;
   YX.GEN.stone_lantern = {
-    label: '石灯笼', cls: 'street', solid: 'trunk', face: 'none', nouns: ['石灯笼', '灯笼', '石灯', '石灯篭', 'stone lantern', 'toro', 'lantern', '灯篭', '石灯籠'], params: { height: { d: 1.9, min: 0.6, max: 8 } }, dims: { height: 'height', size: 'height' }, foot: () => [0.9, 0.9],
+    label: '石灯笼', en: 'Stone lantern', cls: 'street', solid: 'trunk', face: 'none', nouns: ['石灯笼', '灯笼', '石灯', '石灯篭', 'stone lantern', 'toro', 'lantern', '灯篭', '石灯籠'], params: { height: { d: 1.9, min: 0.6, max: 8 } }, dims: { height: 'height', size: 'height' }, foot: () => [0.9, 0.9],
     build(b, p) {
       const k = p.height / 1.9, g = C.stone, lg = C.stoneLight;
       b.box(0.9 * k, 0.16 * k, 0.9 * k, mix(g, '#000000', 0.1), 0, 0, 0, { tex: 'stone' }); b.cyl(0.26 * k, 0.34 * k, 0.28 * k, g, 0, 0.16 * k, 0, { sides: 8, tex: 'stone' }); b.cyl(0.13 * k, 0.15 * k, 0.62 * k, lg, 0, 0.44 * k, 0, { sides: 10 });

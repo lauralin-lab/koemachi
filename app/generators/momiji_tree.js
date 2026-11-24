@@ -6,8 +6,8 @@
   const YX = window.YX, C = YX.koe, mix = YX.mixHex;
   const CROWN = { spring: ['#a9d05a', '#c9dc6a', '#d9795a', '#8fc04e'], summer: ['#4f8f45', '#5fa04c', '#3f7f3f', '#6aae55'], autumn: ['#c8321f', '#e0701f', '#d9a22a', '#a82418'] };
   YX.GEN.momiji_tree = {
-    label: '红枫', cls: 'nature', solid: 'trunk', face: 'random', nouns: ['红枫', '枫树', '枫叶树', '槭树', 'maple', 'japanese maple', 'momiji', 'maple tree', '紅葉', 'モミジ', '楓'],
-    params: { height: { d: 4.8, min: 2, max: 16 }, season: { d: 'spring', opts: ['spring', 'summer', 'autumn', 'winter'] } }, dims: { height: 'height', size: 'height', width: 'height' }, foot: (p) => [p.height * 0.5, p.height * 0.5],
+    label: '红枫', en: 'Maple tree', cls: 'nature', solid: 'trunk', face: 'random', nouns: ['红枫', '枫树', '枫叶树', '槭树', 'maple', 'japanese maple', 'momiji', 'maple tree', '紅葉', 'モミジ', '楓'],
+    params: { height: { d: 4.8, min: 2, max: 16 }, season: { get d() { return C.season; }, opts: ['spring', 'summer', 'autumn', 'winter'] } }, dims: { height: 'height', size: 'height', width: 'height' }, foot: (p) => [p.height * 0.5, p.height * 0.5],
     build(b, p, rand) {
       const H = p.height, bark = '#5a4636', tr = H * 0.022 + 0.04, cols = CROWN[p.season];
       b.tube([[0, 0, 0], [(rand() - 0.5) * H * 0.1, H * 0.3, 0], [(rand() - 0.5) * H * 0.14, H * 0.55, 0]], tr, bark, { sides: 7 }); b.cyl(tr * 1.3, tr * 1.7, H * 0.04, bark, 0, 0, 0, { sides: 8 });

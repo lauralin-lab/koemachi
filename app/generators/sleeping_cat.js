@@ -3,7 +3,7 @@
 (function () {
   const YX = window.YX, mix = YX.mixHex;
   YX.GEN.sleeping_cat = {
-    label: '睡着的猫', cls: 'creature', solid: false, face: 'random', nouns: ['睡着的猫', '睡觉的猫', '猫', '小猫', 'sleeping cat', 'cat asleep', '寝ている猫'],
+    label: '睡着的猫', en: 'Sleeping cat', cls: 'creature', solid: false, face: 'random', nouns: ['睡着的猫', '睡觉的猫', '猫', '小猫', 'sleeping cat', 'cat asleep', '寝ている猫'],
     params: { color: { d: '#d98b3a', color: 1, pick: ['#d98b3a', '#5a5a5e', '#e8e4da', '#3a3430'] }, pattern: { d: 'tabby', opts: ['plain', 'tabby', 'tuxedo'] } }, dims: { size: 'color' }, foot: () => [0.7, 0.6], mainColor: 'color',
     build(b, p, rand) {
       const c = p.color, dk = mix(c, '#000000', 0.3);

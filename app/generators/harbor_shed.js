@@ -5,7 +5,7 @@
 (function () {
   const YX = window.YX, C = YX.koe, mix = YX.mixHex;
   YX.GEN.harbor_shed = {
-    label: '渔市场棚', cls: 'building', solid: false, face: 'road', nouns: ['渔市场', '鱼市场', '海边棚屋', '渔港棚', 'fish market', 'harbor shed', 'harbour shed', 'fish market shed', '魚市場', '漁協'],
+    label: '渔市场棚', en: 'Fish market', cls: 'building', solid: false, face: 'road', nouns: ['渔市场', '鱼市场', '海边棚屋', '渔港棚', 'fish market', 'harbor shed', 'harbour shed', 'fish market shed', '魚市場', '漁協'],
     params: { length: { d: 16, min: 6, max: 40 }, depth: { d: 8, min: 4, max: 16 }, sign: { d: '魚市場', text: 1 } }, dims: { width: 'length', depth: 'depth' }, foot: (p) => [p.length + 1, p.depth + 1.5],
     build(b, p, rand) {
       const L = p.length, D = p.depth, H = 4.2, n = Math.max(2, Math.round(L / 4));

@@ -4,7 +4,7 @@
   const YX = window.YX, G = YX.GEN, DEG = YX.DEG, clamp = YX.clamp, lerp = YX.lerp, smooth = YX.smooth, L = (c) => YX.lin(c);
   const W = (YX.world = {
     objs: new Map(), nextId: 1, shots: [], aim: null, aimPoint: [0, 0], focusId: null, grabbed: null, time: 0, group: [], people: [],
-    env: { time: 15.6, weather: 'clear', flow: 0, ground: 'grass', light: 'normal', az: 0, look: 'none', gravity: 1 }, // gravity: a rule of the world kept as a setting (1 = as on Earth, 0 = none): saved, undone and spoken like the weather
+    env: { time: 15.6, weather: 'clear', flow: 0, ground: 'grass', light: 'normal', az: 0, look: 'none', gravity: 1, season: 'spring', haze: 0 }, // gravity: a rule of the world kept as a setting (1 = as on Earth, 0 = none): saved, undone and spoken like the weather
     player: { x: 20, y: 1.7, z: -6.4, yaw: Math.PI, pitch: -0.02, vx: 0, vz: 0, fly: false, lens: 0 },
   });
   YX.custom = {};
@@ -105,11 +105,11 @@
   const PAL = { zen: { n: L('#050915'), g: L('#3d4f8f'), d: L('#2f74d0') }, hor: { n: L('#141c33'), g: L('#f6a66c'), d: L('#b9d6ee') }, sun: { n: L('#7f9cff'), g: L('#ffb070'), d: L('#fff4e0') }, hs: { n: L('#27345c'), g: L('#c9b0a8'), d: L('#d6e6ff') }, hg: { n: L('#0d1016'), g: L('#4b4336'), d: L('#5f6a48') } };
   const tri = (p, a, b, c) => [p.n[0] * a + p.g[0] * b + p.d[0] * c, p.n[1] * a + p.g[1] * b + p.d[1] * c, p.n[2] * a + p.g[2] * b + p.d[2] * c];
   const mix3 = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
-  const GROUNDS = { grass: '#6ba64f', sand: '#d9c79a', snow: '#eef2f6', dirt: '#8a6f52', stone: '#9a9a94', dark: '#3d4347' };
+  const GROUNDS = { dry: '#a99a58', grass: '#6ba64f', sand: '#d9c79a', snow: '#eef2f6', dirt: '#8a6f52', stone: '#9a9a94', dark: '#3d4347' };
   const WEATHERS = { clear: [0, 0, 0, 0], cloudy: [0.75, 0, 0, 0.05], rain: [0.95, 1, 0, 0.2], snow: [0.85, 0, 1, 0.3], fog: [0.6, 0, 0, 1], storm: [1, 1.6, 0, 0.35] };
   const TIMES = { dawn: 6.2, sunrise: 6.4, morning: 9, noon: 12, afternoon: 15.5, golden: 17.3, sunset: 18.1, dusk: 18.9, evening: 19.6, night: 22, midnight: 0 };
   const LOOKS = { none: '', warm: 'sepia(0.22) saturate(1.2) contrast(1.03)', cool: 'saturate(0.85) hue-rotate(-8deg) brightness(0.97) contrast(1.05)', noir: 'grayscale(1) contrast(1.25) brightness(0.95)', vivid: 'saturate(1.45) contrast(1.08)', faded: 'saturate(0.6) contrast(0.92) brightness(1.06)', dream: 'saturate(1.2) brightness(1.06) contrast(0.95) blur(0.4px)' };
-  YX.TIMES = TIMES; YX.LOOKS = LOOKS; YX.WEATHERS = WEATHERS;
+  YX.SEASONS = ['spring', 'summer', 'autumn', 'winter']; YX.TIMES = TIMES; YX.LOOKS = LOOKS; YX.WEATHERS = WEATHERS;
   let envTw = null;
   YX.setEnv = function (patch, opt) {
     const E = W.env, out = [];
@@ -120,6 +120,7 @@
     if (patch.ground != null && GROUNDS[String(patch.ground).toLowerCase()]) { E.ground = String(patch.ground).toLowerCase(); out.push(YX.T('地面 ', 'Ground: ') + E.ground); }
     if (patch.light != null && ['soft', 'normal', 'hard'].includes(String(patch.light))) { E.light = String(patch.light); out.push(YX.T('光线 ' + ({ soft: '柔和', normal: '自然', hard: '硬朗' })[E.light], E.light.charAt(0).toUpperCase() + E.light.slice(1) + ' light')); }
     if (patch.look != null && LOOKS[String(patch.look).toLowerCase()] != null) { E.look = String(patch.look).toLowerCase(); renderer.domElement.style.filter = LOOKS[E.look]; out.push(YX.T('影调 ', 'Look: ') + E.look); }
+    if (patch.season != null && YX.SEASONS.includes(String(patch.season).toLowerCase())) { E.season = String(patch.season).toLowerCase(); out.push(YX.T('季节：' + ({ spring: '春天', summer: '夏天', autumn: '秋天', winter: '冬天' })[E.season], 'Season: ' + E.season)); } // what changes with it is seasons.js's job
     if (patch.haze != null && isFinite(+patch.haze)) { E.haze = clamp(+patch.haze, 0, 4); out.push(YX.T('薄雾 ' + E.haze, 'Haze ' + E.haze)); }
     if (patch.az != null && isFinite(+patch.az)) { E.az = +patch.az; out.push(YX.T('调整光线方向', 'Light direction changed')); }
     if (patch.lightFrom) {

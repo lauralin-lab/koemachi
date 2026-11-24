@@ -6,7 +6,7 @@
 (function () {
   const YX = window.YX, C = YX.koe;
   YX.GEN.station = {
-    label: '车站', cls: 'building', solid: false, face: 'road', nouns: ['车站', '小车站', '火车站', '无人车站', 'station', 'train station', 'railway station', '駅', '無人駅'],
+    label: '车站', en: 'Station', cls: 'building', solid: false, face: 'road', nouns: ['车站', '小车站', '火车站', '无人车站', 'station', 'train station', 'railway station', '駅', '無人駅'],
     params: { length: { d: 18, min: 8, max: 40 }, name: { d: '声町', text: 1 } }, dims: { width: 'length' }, foot: (p) => [p.length, 4.4],
     floor: (p, lx, lz) => (Math.abs(lx) <= p.length / 2 && lz >= -2.2 && lz <= 0.9 ? 0.7 : null),
     build(b, p, rand) {

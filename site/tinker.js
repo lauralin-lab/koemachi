@@ -67,7 +67,7 @@
   function makeDict() {
     const L = { p: [], f: [], s: [] }, emit = (k, e) => { for (const fn of L[k]) try { fn(e); } catch (x) { console.warn(x); } };
     const cjk = (s) => /^[⺀-鿿가-힯　-〿＀-￯]/.test(s), sp = (s, n) => (n && !cjk(s) ? ' ' : '') + s;
-    const tag = (l) => (l === 'zh' ? 'zh-CN' : l === 'en' ? 'en-US' : l || navigator.language || 'en-US');
+    const tag = (l) => (l === 'zh' ? 'zh-CN' : l === 'en' ? 'en-US' : l === 'ja' ? 'ja-JP' : l || navigator.language || 'en-US');
     let cur = null; // { rec, finals, partial, stopping, ended }
     function start(opt) {
       return (cur ? stop() : Promise.resolve()).then(() => new Promise((res, rej) => {

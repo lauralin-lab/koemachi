@@ -5,7 +5,7 @@
 (function () {
   const YX = window.YX, C = YX.koe, mix = YX.mixHex;
   YX.GEN.shop_wagashi = {
-    label: '和菓子店', cls: 'building', solid: 'box', face: 'road', nouns: ['和菓子店', '和菓子', '点心铺', '甜品店', '糕点店', 'wagashi shop', 'sweets shop', 'wagashi', 'japanese sweets', '和菓子屋'],
+    label: '和菓子店', en: 'Wagashi shop', cls: 'building', solid: 'box', face: 'road', nouns: ['和菓子店', '和菓子', '点心铺', '甜品店', '糕点店', 'wagashi shop', 'sweets shop', 'wagashi', 'japanese sweets', '和菓子屋'],
     params: { floors: { d: 2, min: 1, max: 3, int: 1 }, width: { d: 6.0, min: 4, max: 10 }, depth: { d: 8, min: 5, max: 12 }, sign: { d: '和菓子', text: 1 }, lit: { d: true, bool: 1 } }, dims: { height: 'floors', width: 'width', depth: 'depth' }, foot: (p) => [p.width + 1, p.depth + 2],
     build(b, p, rand) {
       const w = p.width, d = p.depth, S = C.shopFront(b, rand, { w, d, floors: p.floors, wall: '#f3e8d2', sign: p.sign, signBg: '#e9dcc0', signFg: '#4a3a2c', awning: ['#7a9a6a', '#f4efe0'], noren: { color: '#efe4cc', text: '和菓子', fg: '#7a4a3c' }, lit: p.lit, roof: '#5f6b75' }), fz = S.fz, y = S.base;

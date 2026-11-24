@@ -12,7 +12,7 @@
   const S = { ui: YX.lang === 'zh' ? 'zh' : 'en', lang: 'en', sys: false, sound: true, chips: true, quality: 'refine', gfx: 'high', letter: false, physics: true };
   try { const old = JSON.parse(localStorage.getItem('yanchu.prefs.v1') || '{}'); for (const k of ['sound', 'chips', 'quality', 'gfx', 'letter']) if (old[k] !== undefined) S[k] = old[k]; } catch (e) {}
   try { Object.assign(S, JSON.parse(localStorage.getItem(PKEY) || '{}')); } catch (e) {}
-  S.ui = S.ui === 'zh' ? 'zh' : 'en'; YX.lang = S.ui; YX.strict = S.physics !== false; if (!['', 'zh', 'en'].includes(S.lang)) S.lang = '';
+  S.ui = S.ui === 'zh' ? 'zh' : 'en'; YX.lang = S.ui; YX.strict = S.physics !== false; if (!['', 'zh', 'en', 'ja'].includes(S.lang)) S.lang = '';
   const savePrefs = () => { try { localStorage.setItem(PKEY, JSON.stringify(S)); } catch (e) {} };
   if (!S.enDefault) { if (S.lang === '') S.lang = 'en'; S.enDefault = 1; savePrefs(); } // speech is heard as English unless the player chose otherwise: "Auto" followed the system language and kept hearing Chinese
   let started = false, locked = false, drag = null, sugg = '', dict = null, dl = null, aiState = 'check', voiceState = 'check', warmed = false;
@@ -101,11 +101,13 @@
     const list = $('outList'), keys = Array.from(by.keys()).sort((a, b) => by.get(b).n - by.get(a).n); list.textContent = ''; $('outTotal').textContent = W.objs.size;
     for (const k of keys) { const b = document.createElement('button'); b.type = 'button'; b.className = 'orow'; b.innerHTML = '<span></span><span></span>'; b.children[0].textContent = by.get(k).label; b.children[1].textContent = '×' + by.get(k).n; b.title = T('看向最近的' + by.get(k).label, 'Go to the nearest ' + by.get(k).label); b.onclick = () => { const o = YX.nearestOfType(k, YX.viewNow(), null); if (o) { const c = YX.newCtx(); YX.exec({ op: 'goto', id: '#' + o.id }, c); YX.fx.flash(o, 0xffffff, 1.4); } }; list.appendChild(b); }
   }
+  /* the quick voice-language button beside the input bar: 日本語 <-> English (中文 stays in Settings) */
+  function paintLangQuick() { const b = $('langQuick'); if (!b) return; b.textContent = S.lang === 'ja' ? '日本語' : S.lang === 'zh' ? '中文' : 'English'; b.setAttribute('aria-pressed', String(S.lang === 'ja')); if (YX.ja) YX.ja.pref = S.lang === 'ja'; }
   function paintSeg(id, attr, val) { for (const b of $(id).children) if (b.dataset[attr] !== undefined) b.setAttribute('aria-pressed', String(b.dataset[attr] === String(val))); }
   function paintAll() {
     $('bClay').setAttribute('aria-pressed', String(YX.isClay())); paintDirector();
     paintSeg('wxSeg', 'wx', W.env.weather); paintSeg('lookSeg', 'look', W.env.look); paintSeg('lightSeg', 'light', W.env.light); $('flowBtn').setAttribute('aria-pressed', String(W.env.flow > 0));
-    paintSeg('uiSeg', 'ui', S.ui); paintSeg('langSeg', 'lang', S.lang); paintSeg('qSeg', 'q', S.quality); $('sndBtn').setAttribute('aria-pressed', String(S.sound)); $('gfxBtn').setAttribute('aria-pressed', String(S.gfx === 'high')); $('chipBtn').setAttribute('aria-pressed', String(S.chips)); $('physBtn').setAttribute('aria-pressed', String(S.physics !== false)); $('chips').style.display = S.chips ? '' : 'none';
+    paintSeg('uiSeg', 'ui', S.ui); paintSeg('langSeg', 'lang', S.lang); paintLangQuick(); paintSeg('qSeg', 'q', S.quality); $('sndBtn').setAttribute('aria-pressed', String(S.sound)); $('gfxBtn').setAttribute('aria-pressed', String(S.gfx === 'high')); $('chipBtn').setAttribute('aria-pressed', String(S.chips)); $('physBtn').setAttribute('aria-pressed', String(S.physics !== false)); $('chips').style.display = S.chips ? '' : 'none';
   }
   hooks.ui = paintAll;
   hooks.cinema = (on) => { document.body.classList.toggle('cinema', !!on); document.body.classList.toggle('letter', !!on || !!S.letter); if (!on) $('cine').textContent = ''; };
@@ -133,7 +135,8 @@
   $('flowBtn').onclick = () => { YX.setEnv({ flow: W.env.flow > 0 ? 0 : 3 }); paintAll(); };
   // settings
   $('uiSeg').onclick = (e) => { const v = e.target.dataset.ui; if (v && v !== S.ui) { S.ui = v; YX.lang = v; S.sys = false; savePrefs(); applyLang(); } };
-  $('langSeg').onclick = (e) => { if (e.target.dataset.lang !== undefined) { S.lang = e.target.dataset.lang; S.sys = false; savePrefs(); paintAll(); } };
+  if ($('langQuick')) $('langQuick').onclick = (e) => { e.stopPropagation(); S.lang = S.lang === 'ja' ? 'en' : 'ja'; S.sys = false; savePrefs(); paintAll(); buildChips(); toast(S.lang === 'ja' ? '音声認識：日本語 · 例：春にして / 雪を降らせて / 夜にして' : 'Voice: English · e.g. “make it spring”, “let it snow”, “make it night”'); canvas.focus(); };
+  $('langSeg').onclick = (e) => { if (e.target.dataset.lang !== undefined) { S.lang = e.target.dataset.lang; S.sys = false; savePrefs(); paintAll(); buildChips(); } };
   $('qSeg').onclick = (e) => { if (e.target.dataset.q) { S.quality = e.target.dataset.q; M.quality = S.quality; savePrefs(); paintAll(); } };
   $('sndBtn').onclick = () => { S.sound = !S.sound; savePrefs(); initAudio(); paintAll(); };
   $('gfxBtn').onclick = () => { S.gfx = S.gfx === 'high' ? 'low' : 'high'; YX.setQuality(S.gfx); savePrefs(); paintAll(); };
@@ -158,9 +161,10 @@
   function frameGrab() { if (!dl) return noSave(); YX.afterRender = (cv) => cv.toBlob((b) => { if (!b) return toast(T('截帧没有成功', 'Could not grab the frame')); dl.save({ filename: 'spoken-world-frame-' + Date.now() + '.png', data: b }).then(() => toast(T('已保存这一帧', 'Frame saved')), saveFail); }, 'image/png'); YX.sfx('shot'); }
 
   /* ---------- chips ---------- */
-  const CHIPS = { zh: [['把眼前的这个房子变大一点，再高一点', '当场'], ['在这个房子的屋顶上加一只鸟', '当场'], ['在马路对面放一个咖啡馆', '当场'], ['变成黄昏', '当场'], ['来一群人在咖啡馆门口聊天', '当场'], ['环绕这个房子拍一圈', '运镜'], ['造一座会转的荷兰风车', '现写', 1], ['造一个海边渔村', '布景', 1]],
-    en: [['Make this house a bit bigger, then taller', 'instant'], ['Add a bird on the roof of this house', 'instant'], ['Put a café across the street', 'instant'], ['Make it sunset', 'instant'], ['A crowd of people in front of the café', 'instant'], ['Orbit this house', 'camera'], ['Build a Dutch windmill that spins', 'written', 1], ['Build a seaside fishing village', 'scene', 1]] };
-  function buildChips() { const box = $('chips'); box.textContent = ''; for (const c of CHIPS[S.ui] || CHIPS.en) { const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = c[0]; const em = document.createElement('em'), lock = !!c[2] && later(); em.textContent = lock && H.strings.needTag ? T(H.strings.needTag[0], H.strings.needTag[1]) : c[1]; if (lock) b.classList.add('lock'); b.appendChild(em); b.onclick = () => { initAudio(); run(c[0]); canvas.focus(); }; box.appendChild(b); } }
+  const CHIPS = { zh: [['变成秋天', '当场'], ['下雪吧', '当场'], ['变成夜晚', '当场'], ['在这里种一棵樱花树', '当场'], ['在这里放一台自动贩卖机', '当场'], ['环绕这座木屋拍一圈', '运镜'], ['在这里造一辆拉面小摊车', '现写', 1], ['在神社旁造一尊狸猫雕像', '现写', 1]],
+    en: [['Make it autumn', 'instant'], ['Let it snow', 'instant'], ['Make it night', 'instant'], ['Add a cherry tree here', 'instant'], ['Put a vending machine here', 'instant'], ['Orbit this house', 'camera'], ['Build a ramen food truck here', 'written', 1], ['A stone tanuki statue by the shrine', 'written', 1]],
+    ja: [['秋にして', 'その場で'], ['雪を降らせて', 'その場で'], ['夜にして', 'その場で'], ['ここに桜の木を置いて', 'その場で'], ['ここに自動販売機を置いて', 'その場で'], ['この家の周りを一周して撮って', 'カメラ'], ['ここにラーメンの屋台を作って', '書き下ろし', 1], ['神社のそばに狸の石像を作って', '書き下ろし', 1]] };
+  function buildChips() { const box = $('chips'); box.textContent = ''; for (const c of CHIPS[S.lang === 'ja' ? 'ja' : S.ui] || CHIPS.en) { const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = c[0]; const em = document.createElement('em'), lock = !!c[2] && later(); em.textContent = lock && H.strings.needTag ? T(H.strings.needTag[0], H.strings.needTag[1]) : c[1]; if (lock) b.classList.add('lock'); b.appendChild(em); b.onclick = () => { initAudio(); run(c[0]); canvas.focus(); }; box.appendChild(b); } }
   function run(text) { text = String(text || '').trim(); if (!text) return; spell(text, 'done'); M.commit(text); }
 
   /* ---------- voice ---------- */
@@ -234,15 +238,15 @@
   $('tLang').onclick = (e) => { const v = e.target.dataset.tui; if (!v) return; e.stopPropagation(); const b = document.querySelector('#uiSeg [data-ui="' + v + '"]'); if (b) b.click(); };
 
   /* ---------- title card: the name over the town, and the town doing what a few spoken lines say ---------- */
-  const ACT = { zh: ['变成黄昏', '下雪吧', '变成午夜', '放晴', '日出'], en: ['make it golden hour', 'let it snow', 'make it midnight', 'clear sky', 'sunrise'] };
+  const ACT = { zh: ['变成秋天', '变成冬天', '变成夜晚', '变成春天', '变成黄昏'], en: ['make it autumn', 'make it winter', 'make it night', 'make it spring', 'make it golden hour'], ja: ['秋にして', '冬にして', '夜にして', '春にして', '夕焼けにして'] };
   function titleLine(first) {
-    const q = $('tryQ'), L = ACT[S.ui] || ACT.en; if (!q) return; if (!first) title.i = (title.i + 1) % L.length; const text = L[Math.max(0, title.i)];
+    const q = $('tryQ'), L = ACT[S.lang === 'ja' ? 'ja' : S.ui] || ACT.en; if (!q) return; if (!first) title.i = (title.i + 1) % L.length; const text = L[Math.max(0, title.i)];
     q.textContent = text; if (first) return; q.classList.remove('in'); void q.offsetWidth; q.classList.add('in'); $('intro').classList.add('say');
     clearTimeout(title.t2); title.t2 = setTimeout(() => { $('intro').classList.remove('say'); if (!title.on || started) return; let r = null; try { const v = YX.viewNow(); r = M.parseLocal(text, { view: v, ctx: YX.newCtx(v) }); } catch (e) {} if (r && r[0] && r[0].op === 'env') YX.setEnv(r[0]); }, 1050); // the same grammar the player's own words go through
   }
   function titleStart() {
     if (started || title.on) return; title.on = true; document.body.classList.add('title');
-    const P = W.player, home = Object.assign(YX.poseNow(), { fly: P.fly, lens: P.lens || 0 }); title.home = home; title.env = { time: W.env.time, weather: W.env.weather };
+    const P = W.player, home = Object.assign(YX.poseNow(), { fly: P.fly, lens: P.lens || 0 }); title.home = home; title.env = { time: W.env.time, weather: W.env.weather, season: W.env.season };
     let cx = 0, cz = 0, n = 0, far = 0; const bs = []; for (const o of W.objs.values()) { const d = YX.defOf(o); if (d && d.cls === 'building' && !o.dead) { bs.push(o); cx += o.x; cz += o.z; n++; } }
     if (n) { cx /= n; cz /= n; for (const o of bs) far = Math.max(far, Math.hypot(o.x - cx, o.z - cz)); } else { cx = home.x; cz = home.z; far = 20; }
     const still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches, R = Math.min(72, Math.max(34, far * 0.9 + 14)), H = R * 0.3 + 5, a0 = Math.atan2(home.z - cz, home.x - cx), w = still ? 0 : (2 * Math.PI) / 220;
@@ -255,7 +259,7 @@
     const I = $('intro'); clearInterval(title.timer); clearInterval(title.envT); clearTimeout(title.t2); document.body.classList.remove('title');
     if (!title.on) { I.classList.add('off'); return; }
     I.classList.add('out'); setTimeout(() => I.classList.add('off'), 820);
-    const h = title.home, E = title.env; if (Math.abs(W.env.time - E.time) > 0.01 || W.env.weather !== E.weather) YX.setEnv({ time: E.time, weather: E.weather }); // back to the player's own sky, as a time-lapse
+    const h = title.home, E = title.env; if (Math.abs(W.env.time - E.time) > 0.01 || W.env.weather !== E.weather || W.env.season !== E.season) YX.setEnv({ time: E.time, weather: E.weather, season: E.season }); // back to the player's own sky, as a time-lapse
     YX.cineStop(); YX.cineStart({ type: 'pose', dur: 1.6, to: h, onDone: (fin) => { if (!fin) YX.setPose(h); W.player.fly = h.fly; title.on = false; YX.markDirty(); } });
   }
 
@@ -368,7 +372,7 @@
 
   hooks.resetTown = () => $('resetBtn').onclick();
   /* what the film module needs from this one */
-  function skipTitle() { if (!title.on) return; clearInterval(title.timer); clearInterval(title.envT); clearTimeout(title.t2); YX.cineStop(); YX.setPose(title.home); W.player.fly = title.home.fly; if (Math.abs(W.env.time - title.env.time) > 0.01 || W.env.weather !== title.env.weather) YX.setEnv({ time: title.env.time, weather: title.env.weather }, { instant: true }); title.on = false; document.body.classList.remove('title'); $('intro').classList.add('off'); } // straight to the world, no flight
+  function skipTitle() { if (!title.on) return; clearInterval(title.timer); clearInterval(title.envT); clearTimeout(title.t2); YX.cineStop(); YX.setPose(title.home); W.player.fly = title.home.fly; if (Math.abs(W.env.time - title.env.time) > 0.01 || W.env.weather !== title.env.weather || W.env.season !== title.env.season) YX.setEnv({ time: title.env.time, weather: title.env.weather, season: title.env.season }, { instant: true }); title.on = false; document.body.classList.remove('title'); $('intro').classList.add('off'); } // straight to the world, no flight
   YX.ui = { skipTitle, toast, closePops, togglePanel, canSave: () => !!dl, save: (o) => (dl ? dl.save(o) : Promise.reject({ code: 'none' })), saveFail, started: () => started, lang: () => S.ui };
   /* ---------- go ---------- */
   boot({});

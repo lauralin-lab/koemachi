@@ -5,7 +5,7 @@
 (function () {
   const YX = window.YX, C = YX.koe, mix = YX.mixHex;
   YX.GEN.shop_zakka = {
-    label: '杂货店', cls: 'building', solid: 'box', face: 'road', nouns: ['杂货店', '杂货铺', '小卖部', '便利店', '商店', 'general store', 'zakka', 'variety store', 'corner shop', '雑貨店', '雑貨屋'],
+    label: '杂货店', en: 'General store', cls: 'building', solid: 'box', face: 'road', nouns: ['杂货店', '杂货铺', '小卖部', '便利店', '商店', 'general store', 'zakka', 'variety store', 'corner shop', '雑貨店', '雑貨屋'],
     params: { floors: { d: 2, min: 1, max: 3, int: 1 }, width: { d: 7.0, min: 4, max: 10 }, depth: { d: 8, min: 5, max: 12 }, sign: { d: '雑貨', text: 1 }, lit: { d: true, bool: 1 } }, dims: { height: 'floors', width: 'width', depth: 'depth' }, foot: (p) => [p.width + 1, p.depth + 2],
     build(b, p, rand) {
       const w = p.width, d = p.depth, S = C.shopFront(b, rand, { w, d, floors: p.floors, wall: '#e6dcc4', sign: p.sign, signBg: '#2f5d3a', signFg: '#f4efe0', awning: ['#d9a441', '#f4efe0'], lit: p.lit }), fz = S.fz, y = S.base;

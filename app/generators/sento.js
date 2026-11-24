@@ -5,7 +5,7 @@
 (function () {
   const YX = window.YX, C = YX.koe, mix = YX.mixHex;
   YX.GEN.sento = {
-    label: '澡堂', cls: 'building', solid: 'box', face: 'road', nouns: ['澡堂', '浴场', '钱汤', '公共浴室', '大澡堂', 'sento', 'bathhouse', 'public bath', '銭湯', 'お風呂屋'],
+    label: '澡堂', en: 'Bathhouse', cls: 'building', solid: 'box', face: 'road', nouns: ['澡堂', '浴场', '钱汤', '公共浴室', '大澡堂', 'sento', 'bathhouse', 'public bath', '銭湯', 'お風呂屋'],
     params: { width: { d: 12, min: 8, max: 18 }, depth: { d: 12, min: 8, max: 18 }, chimney: { d: 18, min: 8, max: 30 }, sign: { d: 'ゆ', text: 1 } }, dims: { width: 'width', depth: 'depth', height: 'chimney' }, foot: (p) => [p.width + 1.5, p.depth + 1.5],
     build(b, p, rand) {
       const w = p.width, d = p.depth, fz = d / 2, base = 0.5, H = 6.2, dark = C.woodDark;

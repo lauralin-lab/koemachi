@@ -5,7 +5,7 @@
 (function () {
   const YX = window.YX, C = YX.koe, mix = YX.mixHex;
   YX.GEN.shrine = {
-    label: '神社', cls: 'building', solid: 'box', face: 'road', nouns: ['神社', '小神社', '神殿', '祠', '拜殿', 'shrine', 'small shrine', 'shinto shrine', 'temple', '神社の社殿', 'お社'],
+    label: '神社', en: 'Shrine', cls: 'building', solid: 'box', face: 'road', nouns: ['神社', '小神社', '神殿', '祠', '拜殿', 'shrine', 'small shrine', 'shinto shrine', 'temple', '神社の社殿', 'お社'],
     params: { width: { d: 6.4, min: 3, max: 14 }, depth: { d: 5.2, min: 3, max: 12 }, lit: { d: false, bool: 1 } }, dims: { width: 'width', depth: 'depth' }, foot: (p) => [p.width + 2, p.depth + 3.5],
     build(b, p, rand) {
       const w = p.width, d = p.depth, base = 0.9, H = 3.3, fz = d / 2, red = '#8f3b2a', wood = '#6b4a35', dk = C.woodDark;

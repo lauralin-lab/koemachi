@@ -6,7 +6,7 @@
   const YX = window.YX, C = YX.koe, mix = YX.mixHex;
   const FLAGS = ['#d9534f', '#f1c14a', '#4a7fb0', '#f4efe6', '#8bb58a', '#e8a0b4'];
   YX.GEN.arcade_roof = {
-    label: '商店街拱廊', cls: 'building', solid: false, face: 'road', block: false, nouns: ['商店街拱廊', '商店街', '拱廊', '有顶商店街', '顶棚', 'arcade', 'shotengai', 'covered street', 'shopping arcade', 'covered arcade', '商店街', 'アーケード'],
+    label: '商店街拱廊', en: 'Shopping arcade', cls: 'building', solid: false, face: 'road', block: false, nouns: ['商店街拱廊', '商店街', '拱廊', '有顶商店街', '顶棚', 'arcade', 'shotengai', 'covered street', 'shopping arcade', 'covered arcade', '商店街', 'アーケード'],
     params: { length: { d: 60, min: 8, max: 160 }, width: { d: 7.4, min: 4, max: 14 }, lanterns: { d: true, bool: 1 } }, dims: { width: 'length', depth: 'width', size: 'length' }, foot: (p) => [p.length, p.width],
     build(b, p, rand) {
       const L = p.length, W = p.width, H = 4.4, step = 4, n = Math.round(L / step);

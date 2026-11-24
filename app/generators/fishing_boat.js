@@ -6,7 +6,7 @@
   const YX = window.YX, C = YX.koe, mix = YX.mixHex;
   const HULLS = ['#f1eee6', '#e9edf0', '#dfe8ec', '#f4e9d2'], BANDS = [C.indigo, C.vermilion, '#2f7a6a', '#c9a02f'];
   YX.GEN.fishing_boat = {
-    label: '渔船', cls: 'vehicle', float: true, solid: false, face: 'road', mainColor: 'hull', nouns: ['渔船', '小渔船', '船', '小船', '渔舟', 'fishing boat', 'boat', 'fishing vessel', 'small boat', '漁船', '船'],
+    label: '渔船', en: 'Fishing boat', cls: 'vehicle', float: true, solid: false, face: 'road', mainColor: 'hull', nouns: ['渔船', '小渔船', '船', '小船', '渔舟', 'fishing boat', 'boat', 'fishing vessel', 'small boat', '漁船', '船'],
     params: { length: { d: 9, min: 4, max: 20 }, hull: { d: '#f1eee6', color: 1, pick: HULLS }, band: { d: C.indigo, color: 1, pick: BANDS }, name: { d: '声丸', text: 1 } }, dims: { size: 'length', width: 'length' }, foot: (p) => [p.length * 0.3, p.length],
     build(b, p, rand) {
       const L = p.length, B = L * 0.3, plan = (len, bw) => [[-len / 2, -bw / 2], [len / 2 - L * 0.28, -bw / 2], [len / 2, 0], [len / 2 - L * 0.28, bw / 2], [-len / 2, bw / 2]].map(([x, z]) => [x, -z]); // outline seen from above (the group below turns it flat)

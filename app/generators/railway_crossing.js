@@ -5,7 +5,7 @@
 (function () {
   const YX = window.YX, C = YX.koe;
   YX.GEN.railway_crossing = {
-    label: '道口警报器', cls: 'street', solid: 'trunk', face: 'road', nouns: ['道口警报器', '道口', '铁路道口', '平交道', 'railway crossing', 'level crossing', 'crossing signal', '踏切', '踏切警報機'],
+    label: '道口警报器', en: 'Crossing signal', cls: 'street', solid: 'trunk', face: 'road', nouns: ['道口警报器', '道口', '铁路道口', '平交道', 'railway crossing', 'level crossing', 'crossing signal', '踏切', '踏切警報機'],
     params: { alarm: { d: false, bool: 1 }, phase: { d: 0, min: 0, max: 1, int: 1 } }, foot: () => [1.6, 0.8],
     build(b, p) {
       for (let i = 0; i < 8; i++) b.cyl(0.075, 0.075, 0.4, i % 2 ? '#1c1c1c' : '#f0c020', 0, i * 0.4, 0, { sides: 8 });
