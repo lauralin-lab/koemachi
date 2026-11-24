@@ -1,4 +1,4 @@
-/* Spoken World · Look & Fix: after the model builds a new kind of object, the object is looked at.
+/* Koemachi · Look & Fix: after the model builds a new kind of object, the object is looked at.
    capture(o)  renders the object alone, from a temporary camera, as a JPEG under 1.5 MB.
    check(o, ask, round)  sends that picture and the original request to the model (as an image) and gets {match, problems, fix} back.
    The orchestration (revise the code, rebuild, check again, at most 2 rounds) is in mind.js (inventRun), where the code writer lives.
@@ -48,14 +48,14 @@
   let box = null;
   function ensureBox() {
     if (box) return box;
-    const st = document.createElement('style'); st.textContent = '#lfBox{position:fixed;right:12px;bottom:12px;z-index:5;display:flex;flex-direction:column;gap:6px;align-items:flex-end;pointer-events:none}#lfBox div{max-width:min(320px,80vw);padding:7px 11px;border-radius:9px;background:rgba(14,16,20,.82);color:#f4efe6;font:500 12.5px/1.35 var(--f-ui,system-ui);box-shadow:0 6px 20px rgba(0,0,0,.3);transition:opacity .5s}#lfBox div.ok{border-left:3px solid #6fd08c}#lfBox div.fix{border-left:3px solid #ffd84a}#lfBox div.off{opacity:0}';
+    const st = document.createElement('style'); st.textContent = '#lfBox{position:fixed;right:12px;bottom:12px;z-index:5;display:flex;flex-direction:column;gap:6px;align-items:flex-end;pointer-events:none}#lfBox div{max-width:min(320px,80vw);padding:7px 11px;border-radius:9px;background:rgba(14,16,20,.82);color:#f4efe6;font:500 12.5px/1.35 var(--f-ui,system-ui);box-shadow:0 6px 20px rgba(0,0,0,.3);transition:opacity .5s}#lfBox div.ok{border-left:3px solid #6fd08c}#lfBox div.fix{border-left:3px solid #ffd84a}#lfBox div.off{opacity:0}#lfBox div button{pointer-events:auto;margin-left:10px;padding:3px 9px;border:1px solid rgba(255,255,255,.35);border-radius:6px;background:rgba(255,255,255,.1);color:#fff;font:600 11.5px/1.2 var(--f-ui,system-ui);cursor:pointer}#lfBox div button:hover{background:rgba(255,255,255,.22)}';
     document.head.appendChild(st); box = document.createElement('div'); box.id = 'lfBox'; box.setAttribute('role', 'status'); document.body.appendChild(box); return box;
   }
   L.status = function (label) { // one line per object being looked at
     const line = document.createElement('div'); line.className = ''; ensureBox().appendChild(line); let gone = 0;
     return {
       say(text, kind) { line.className = kind || ''; line.textContent = label + ' · ' + text; },
-      end(text, kind) { if (!text) { line.remove(); return; } this.say(text, kind); clearTimeout(gone); gone = setTimeout(() => { line.classList.add('off'); setTimeout(() => line.remove(), 600); }, 7000); },
+      end(text, kind, action) { if (!text) { line.remove(); return; } this.say(text, kind); if (action) { const b = document.createElement('button'); b.type = 'button'; b.textContent = action.label; b.onclick = (e) => { e.stopPropagation(); b.disabled = true; Promise.resolve(action.run()).then(() => { b.remove(); }, () => { b.disabled = false; }); }; line.appendChild(b); } clearTimeout(gone); gone = setTimeout(() => { line.classList.add('off'); setTimeout(() => line.remove(), 600); }, action ? 30000 : 7000); },
     };
   };
 

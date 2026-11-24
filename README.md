@@ -1,106 +1,96 @@
-<h1 align="center">Spoken World</h1>
+<h1 align="center">Koemachi · 声町</h1>
 
-<p align="center"><b>Say it, and the world changes.</b><br>
-A real-time 3D world you shape by talking to it, running in your browser.</p>
+<p align="center"><b>Say it, and the town changes.</b><br>
+An original Japanese seaside hill town you shape by talking to it, in your browser, on Thinking Machines' Inkling.</p>
 
-<p align="center">
-  <a href="#run-it"><b>Run it</b></a> &nbsp;·&nbsp;
-  <a href="#for-developers">For developers</a>
-</p>
+<p align="center"><img src="docs/hero.jpg" alt="Koemachi at golden hour: a harbour with fishing boats and a lighthouse, a railway and a covered shopping street on the first terrace, wooden houses climbing a wooded hill to a shrine, cherry petals falling" width="860"></p>
 
-<p align="center"><img src="docs/hero.webp" alt="The camera comes down over the town under the title Spoken World; then five spoken requests, each changing the world as it is said: a house grows a floor, trees fill an empty field, a pond appears, ten houses appear, and the street turns to a rainy night" width="860"></p>
+**A fictional town, built entirely from code.** Koemachi sits on a slope between the sea and a wooded hill: a small fishing harbour with a breakwater and a lighthouse, a single-track
+railway with a level crossing and a tiny unstaffed station (a one- or two-car train passes every minute, and the crossing lamps flash and the barrier comes down), a covered shopping street
+(*shotengai*) with a ramen shop, a sweets shop, a general store and a bathhouse with a tall chimney, lanes four metres wide between wooden houses with tiled roofs and laundry on the balconies,
+and stone steps lined with cherry and maple trees up to a red torii and a small shrine with a view of the sea. Every house, boat, tree and person is made by code: no model files, no textures to
+download. Drawn with Three.js and nothing else.
 
-<p align="center"><sub>"Make this house taller." &nbsp;·&nbsp; "Add many trees here." &nbsp;·&nbsp; "Add a pond here." &nbsp;·&nbsp; "Add ten houses here." &nbsp;·&nbsp; "Make it a rainy night."</sub></p>
+**Speak, and it is so.** Walk in, point at something, hold Space and say what you want: *"make it autumn"*, *"put a vending machine here"*, *"make this house taller"*, *"let it snow"*.
+Say something that does not exist yet, *"put a ramen food truck here, with steam"*, and the model writes it while you wait. In English, 中文 or 日本語.
 
-**You speak, and it is so.** Point at something, hold Space and say what you want. "Make this house taller."
-"Put a café across the street." "Make it a rainy night." "Add a sleepy boar." The world changes in front of you, while
-you are still standing in it. People who live there can be clicked and spoken with.
-
-**An open world with no end, and a film set.** Wander and keep building: there is no list of things you are allowed to
-ask for, so the game never runs out. Or direct it: "orbit this house… farther… record it", put three cameras on a bus,
-have someone walk out of a door, and record the clip.
-
-**All of it generated, all of it in the browser.** Every house, tree, bus and person is made by code, and anything that
-does not exist yet is written by a language model while you wait. It is drawn with Three.js and nothing else: no game
-engine, no model files, no install. Open a page and talk.
-
-<table>
-  <tr>
-    <td width="50%" align="center" valign="top">
-      <img src="docs/say-it.gif" alt="A bus becomes a double-decker when asked" width="100%"><br>
-      <b>Say it</b><br>
-      <sub>"Make it a double-decker."</sub>
-    </td>
-    <td width="50%" align="center" valign="top">
-      <img src="docs/build-it.gif" alt="A fountain is rebuilt from a spoken description" width="100%"><br>
-      <b>Ask for what does not exist</b><br>
-      <sub>"Make this fountain grander: three marble tiers, four bronze horses, and a ring of jets."</sub>
-    </td>
-  </tr>
-</table>
-
-<p align="center"><sub>Cut from a film recorded in the real interface. Captions were added in the edit; where the model's wait is shortened, the corner of the picture says so.</sub></p>
+<p align="center"><img src="docs/seasons.gif" alt="The same lane in spring, summer, autumn, winter and at night" width="720"></p>
 
 ## Run it
 
-This fork is **Tinker-only**: the model is Thinking Machines' Inkling, reached through Tinker's Anthropic-compatible Messages API by a small
-local server. Voice input is your browser's own Web Speech API (Chrome). There is nothing else to sign up for.
-
-Needs Node 18 or later and Chrome. No dependencies to install.
+Needs Node 18 or later, Chrome, and a Tinker API key. There is nothing to install.
 
 ```sh
-git clone https://github.com/ryannli/spoken-world && cd spoken-world    # or your fork
-cat > .env <<'ENVEND'
-TINKER_BASE_URL=https://tinker.thinkingmachines.dev/services/tinker-prod/anthropic/api
-TINKER_API_KEY=your-tinker-key
-TINKER_MODEL=thinkingmachines/Inkling-2-Small
-ENVEND
+git clone https://github.com/<you>/koemachi && cd koemachi
+cp .env.example .env              # then put your Tinker base URL and key in it
 node site/build.mjs
-node site/serve.js          # http://localhost:8080
+node site/serve.js                # http://localhost:8080   (PORT=8090 node site/serve.js for another port)
 ```
 
-`.env` is git-ignored. `TINKER_*` in the environment, or `SW_ENV_FILE=/path/to/file`, work too. `TINKER_MODEL` is optional.
-The page sends its model calls to the local server (`/__tinker/messages`), which adds the key, so the key never reaches the browser
-([how it is handled](SECURITY.md)). Hold Space to talk; press `/` to type instead.
-Each model call's latency and token counts are in `SW_HOST.usage` (browser console).
+`.env` is git-ignored. The page sends its model calls to the local server (`/__tinker/messages`), which adds the key and forwards them to Tinker's Anthropic-compatible Messages API, so the
+key never reaches the browser ([how it is handled](SECURITY.md)). Voice is the browser's own Web Speech API (Chrome): hold **Space** to talk, press `/` to type.
+The **日本語 / English** button beside the input bar chooses the language you speak (中文 is in Settings). Each model call's latency and token counts are in `SW_HOST.usage` (browser console).
 
-### Look & Fix
+## What to say
 
-After the model builds a new kind of object, the page renders it alone from a temporary camera and shows the picture to the model together
-with your request. If the model names a problem ("wheels were floating"), the code is revised and the object is rebuilt with a short
-dissolve, then looked at again: at most 2 fix rounds. A small note in the bottom-right corner says "Checking…", then "Looks right" or
-"Fixed: …". The world stays playable the whole time. Every fix round's before/after pictures are kept in `data/lookfix/` (git-ignored),
-and each check or fix call is a labelled entry in `SW_HOST.usage` (`look-check r0`, `look-fix r1`, …). Thinking effort is set per kind of
-call in `site/tinker.js` (`EFFORT`); everything runs at `low`, the fastest setting that gave correct results in testing.
+| | English | 中文 | 日本語 |
+|---|---|---|---|
+| season | make it spring / summer / autumn / winter | 变成春天 / 夏天 / 秋天 / 冬天 | 春にして · 夏にして · 秋にして · 冬にして |
+| weather | let it snow · make it rain · clear sky | 下雪吧 · 下雨 · 放晴 | 雪を降らせて · 雨にして · 晴れにして |
+| time | make it morning / noon / golden hour / night | 变成早上 / 中午 / 黄昏 / 夜晚 | 朝にして · 昼にして · 夕焼けにして · 夜にして |
+| add | put a vending machine here · three cherry trees | 在这里放一台自动贩卖机 | ここに自動販売機を置いて · 3本の桜を植えて |
+| change | make this house taller · make it red | 把这个房子变高一点 | この家をもっと高くして · これを赤くして |
+| remove, undo | remove it · undo | 删掉它 · 撤销 | これを消して · 元に戻して |
+| film | orbit this house · record it | 环绕这个房子拍一圈 | この家の周りを一周して撮って · 録画して |
+| keep | save this as a generator | 保存为生成器 | ジェネレーターとして保存して |
+
+Sentences the built-in grammar knows run instantly and cost nothing; anything else goes to the model (about 2–10 s), and a new kind of object takes about a minute.
+
+## The Tinker features
+
+- **Look & Fix** (built). After the model builds a *new kind* of object, the page renders it alone from a temporary camera, shows the picture to the model together with your request, and if the model names a
+  problem ("wheels were floating") revises the code and rebuilds it, with the old look dissolving over the new, up to two rounds. It runs in the background: you see the object at once, a small
+  note in the corner says *Checking… / Fixing… / Fixed: … / Looks right*, and the before and after pictures of every fix are kept in `data/lookfix/`. Thinking effort is set per kind of
+  call in `site/tinker.js`; everything runs at `low`, which was the fastest setting that gave correct results in testing.
+- **Learning from your play** (built, the first half of *Train my world*). Every model result you keep (it did not fail and you did not undo it within 30 seconds) is written as a chat example to
+  `data/sessions.jsonl`. The corner counter shows *Learned from: N / 30 edits*. **Train my world** (training a LoRA on thinkingmachines/Inkling-2-Small from those examples, and switching the
+  town to your own model) and **Watch it learn** (the same request built by the base model and by each saved checkpoint, side by side along the street) are **not built yet**.
+
+## Add your own generators
+
+Every object type is one file in [`app/generators/`](app/generators/README.md): a header comment and a `build(b, p, rand)` function. When the model builds something you like, press
+**Save as generator** (or say "save this as a generator") and the code it wrote is saved there in the same format, ready to review and contribute back. How to write one by hand, the fields, the builder
+and the checks are in [app/generators/README.md](app/generators/README.md).
 
 ## For developers
 
-How it works inside is written up in [ARCHITECTURE.md](ARCHITECTURE.md).
-
-Scenario scripts that run inside the page under Playwright, through the real local server and the Tinker host, with a stand-in for the model (no key, nothing billed):
+How it works inside is in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ```sh
+node tests/check_generators.js                       # every generator: header, fields, and that build() runs (no browser)
 cd tests && npm install && npx playwright install chromium
-node run.js                # all of them
-node run.js aim2 route1    # some
+node run.js                # all the scenarios, through the real server and the Tinker host, with a stand-in model (no key, nothing billed)
+node run.js koemachi1 seasons1 ja1     # some
 ```
 
-Each prints what happened; they are read, not asserted. See the top of `tests/run.js`.
+Each scenario prints what happened; the Koemachi ones (`koemachi1`, `seasons1`, `ja1`, `lookfix1`, `session1`, `generators1`) throw when a check fails. The older engine scenarios
+run in the original spoken-world town, kept in `tests/fixtures/` for that purpose only.
 
 ## Known limits
 
-- Desktop browsers with a keyboard and mouse; Chrome is the one it is tested in.
-- One clip is at most 10 seconds.
-- Paths written for cars avoid buildings but do not follow roads.
-- Only houses, shops and cafés have doors that open.
-- People are simple figures.
-- The world is saved in the browser's local storage: one world per browser, no accounts, no sharing.
-- The scene description sent to the video model is written by rule from the world, not by a model; you can edit it before sending.
+- Desktop Chrome with a keyboard and mouse. Voice needs Chrome's speech service (the audio goes to Google, not to this app or to Tinker).
+- The hillside is built from stepped terraces and stone steps: the engine has no terrain. Houses are not enterable (the original spoken-world houses are, and still can be added by voice).
+- One clip is at most 10 seconds. The world is saved in the browser's local storage: one world per browser, no accounts, no sharing.
+- Japanese is understood by rewriting it into the English grammar; messages and the log stay in English or Chinese.
+- Japanese text on signs is drawn with the system's fonts (Noto Sans JP if it is installed).
+- The frame rate was measured only in a software renderer; on a laptop GPU it should be much higher. A start view is about 600,000 triangles.
 
-## Credit
+## Built on spoken-world
 
-Built on [spoken-world](https://github.com/ryannli/spoken-world) by ryannli (Apache-2.0). What this fork changed is listed in [NOTICE](NOTICE).
+Koemachi is a fork of **[spoken-world](https://github.com/ryannli/spoken-world) by ryannli** (Apache-2.0), which provides the engine: the object builder, the instant grammar, the
+three-tier mind, the film tools and most of the page. This fork replaces the model provider, the town, the language and a good part of the generators; what changed is listed in [NOTICE](NOTICE).
+Thank you, ryannli.
 
 ## License
 
-Code: [Apache-2.0](LICENSE). Third-party parts and the example clips: see [NOTICE](NOTICE).
+Code: [Apache-2.0](LICENSE). Third-party parts and fonts: see [NOTICE](NOTICE).

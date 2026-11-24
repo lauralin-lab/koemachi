@@ -1,13 +1,22 @@
+Koemachi (声町)
+
+This product is a modified version of Spoken World (https://github.com/ryannli/spoken-world).
 Spoken World
 Copyright 2026 ryannli (https://github.com/ryannli)
 
-This fork is built on spoken-world by ryannli (https://github.com/ryannli/spoken-world), Apache-2.0.
-Modifications in this fork: the Gemini provider, Gemini transcription and the whole "Make it real" workflow (in-page video generation, the copy-prompt button, the
-previs/real comparison pane and the example clips in app/media) were removed;
-the model is now Thinking Machines' Inkling via Tinker, called through the local server (site/serve.js, site/tinker.js); voice input uses the
-browser's Web Speech API; the Claude artifact host and the Vercel deployment files were removed.
-
 Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Modifications made in Koemachi (as required by section 4(b) of the license). Koemachi keeps the engine of Spoken World (the parts builder, the instant grammar, the
+three-tier mind, the film tools, the page) and changes the following:
+ - the model is Thinking Machines' Inkling, reached through Tinker's Anthropic-compatible Messages API by a local server (site/serve.js, site/tinker.js); the Gemini provider,
+   Gemini transcription, the Claude artifact host, the Vercel deployment files and the whole "Make it real" video workflow (including its example clips) were removed;
+ - voice input uses the browser's Web Speech API;
+ - the starting town is a new, original one (app/js/koemachi.js, app/generators/), with new engine parts for it: walkable terraces and steps (app/js/floors.js), an animated sea
+   (sea.js), a railway timetable and level crossing (railway.js), four seasons (seasons.js);
+ - new features: Look & Fix (lookfix.js), kept-example logging (sessions.js), Japanese phrasings (ja.js), "Save as generator" (savegen.js);
+ - the tests were adapted (tests/run.js, tests/check_generators.js and new scenarios); the original starting town is kept in tests/fixtures/legacy_town.js only so that the engine
+   scenarios written for it still run (copied unchanged from spoken-world's app/js/stage.js).
+Modifications are Copyright 2026 the Koemachi contributors and are released under the same license.
 
 This product includes or uses the following third-party work:
 
@@ -19,3 +28,9 @@ This product includes or uses the following third-party work:
 
 - DM Mono typeface, embedded in app/index.html. Copyright 2020 The DM Mono Project Authors
   (https://www.github.com/googlefonts/dm-mono). SIL Open Font License 1.1: licenses/DM-Mono-OFL.txt
+
+- Noto Sans JP. Japanese (and Chinese) words on signs and road paint are drawn by the browser from the first font it finds in the list "Noto Sans JP, Noto Sans SC,
+  Hiragino Sans, PingFang SC, …" (app/js/core.js). Noto Sans JP is licensed under the SIL Open Font License 1.1 (https://openfontlicense.org). This repository does NOT contain
+  or redistribute the font: it is used only if it is installed on the viewer's computer. If you add the font file to a deployment of Koemachi, ship it with its own license text.
+
+- Thinking Machines' Inkling and the Tinker API are services, not part of this repository; using them is subject to their own terms.

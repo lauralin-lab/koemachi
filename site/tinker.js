@@ -1,4 +1,4 @@
-/* Spoken World: the Tinker host, the page's only home.
+/* Koemachi: the Tinker host, the page's only home.
    Loaded before host.js by the page that site/serve.js serves. The AI is Thinking Machines' Inkling, reached through Tinker's
    Anthropic-compatible Messages API; the page never holds the key: it posts to /__tinker/messages on the local server, which adds the key and the
    model (TINKER_API_KEY, TINKER_MODEL) and forwards the call. Voice input is the browser's own Web Speech API.

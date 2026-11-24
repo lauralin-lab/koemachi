@@ -1,0 +1,13 @@
+{
+  "name": "koemachi",
+  "version": "0.1.0",
+  "description": "Koemachi (声町): an original Japanese seaside hill town you shape by talking to it, on Thinking Machines' Inkling via Tinker. Built on spoken-world by ryannli.",
+  "license": "Apache-2.0",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "build": "node site/build.mjs",
+    "start": "node site/build.mjs && node site/serve.js",
+    "check": "node tests/check_generators.js",
+    "test": "node tests/check_generators.js && cd tests && node run.js"
+  }
+}

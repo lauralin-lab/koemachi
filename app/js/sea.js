@@ -1,4 +1,4 @@
-/* Spoken World · sea: a large gently moving water surface south of the town (z > 38), a little above the ground (y = SEA_Y).
+/* Koemachi · sea: a large gently moving water surface south of the town (z > 38), a little above the ground (y = SEA_Y).
    Terraces stand in it; boats float on it (their y is relative to the floor, which is 0 out here, so give a boat y: YX.sea.level).
    The waves are a few slow sines of the vertices, recomputed every other frame (about 8 000 vertices). The mesh is made on the first frame, when the scene exists. */
 'use strict';

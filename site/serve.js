@@ -1,4 +1,4 @@
-// Spoken World on your own computer.
+// Koemachi on your own computer.
 //   node site/build.mjs && node site/serve.js      then open http://localhost:8080
 // The model is Thinking Machines' Inkling via Tinker's Anthropic-compatible Messages API. Put TINKER_BASE_URL, TINKER_API_KEY and (optionally)
 // TINKER_MODEL in a file named .env next to this script or in the repository root, in the environment, or in the file SW_ENV_FILE points to.
@@ -29,6 +29,16 @@ async function keepShot(q, r) { // Look & Fix pictures and notes: written to dat
   fs.writeFileSync(path.join(dir, b.file), b.text != null ? String(b.text) : Buffer.from(String(b.data || ''), 'base64'));
   json(r, 200, { ok: true });
 }
+const GEN_DIR = process.env.SW_GENERATORS_DIR || path.join(__dirname, '..', 'app', 'generators');
+async function keepGenerator(q, r) { // "Save as generator": one new file in app/generators/, never overwriting one that exists
+  if (!sameOrigin(q)) return json(r, 403, { error: { message: 'forbidden' } });
+  let raw = ''; for await (const ch of q) { raw += ch; if (raw.length > 200000) return json(r, 413, { error: { message: 'too large' } }); }
+  let b; try { b = JSON.parse(raw); } catch (e) { return json(r, 400, { error: { message: 'bad json' } }); }
+  if (!b || !/^[a-z][a-z0-9_]{1,30}$/.test(b.name || '') || typeof b.source !== 'string') return json(r, 400, { error: { message: 'bad name' } });
+  if (!b.source.startsWith('/* Koemachi · generator: ' + b.name + '\n') || !b.source.includes('YX.GEN.' + b.name + ' = {') || /<\/script|require\(|import\(|process\.|child_process/.test(b.source)) return json(r, 400, { error: { message: 'not a generator file' } });
+  const file = path.join(GEN_DIR, b.name + '.js'); if (fs.existsSync(file)) return json(r, 409, { error: { message: 'exists' } });
+  fs.mkdirSync(GEN_DIR, { recursive: true }); fs.writeFileSync(file, b.source, { flag: 'wx' }); json(r, 200, { ok: true, file: 'app/generators/' + b.name + '.js' });
+}
 const SESSIONS = () => path.join(DATA, 'sessions.jsonl');
 const sessionCount = () => { try { return fs.readFileSync(SESSIONS(), 'utf8').split('\n').filter(Boolean).length; } catch (e) { return 0; } };
 async function keepSession(q, r) { // one kept model result, a chat example, appended as a line
@@ -58,6 +68,7 @@ http.createServer((q, r) => {
   if (p === '/__config') { if (!sameOrigin(q)) return json(r, 403, {}); const c = tinkerCfg(); return json(r, 200, { model: c.model, ready: !!(c.url && c.key) }); } // never the key
   if (p === '/__tinker/messages' && q.method === 'POST') { tinkerProxy(q, r); return; }
   if (p === '/__session' && (q.method === 'POST' || q.method === 'GET')) { keepSession(q, r).catch(() => { if (!r.headersSent) json(r, 500, {}); }); return; }
+  if (p === '/__generator' && q.method === 'POST') { keepGenerator(q, r).catch(() => { if (!r.headersSent) json(r, 500, {}); }); return; }
   if (p === '/__shot' && q.method === 'POST') { keepShot(q, r).catch(() => { if (!r.headersSent) json(r, 500, {}); }); return; }
   if (p === '/') p = '/index.html';
   const f = path.join(ROOT, p); if (!f.startsWith(ROOT + path.sep) || path.basename(f).startsWith('.') || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { r.writeHead(404); r.end('not found'); return; }
@@ -66,6 +77,6 @@ http.createServer((q, r) => {
   r.writeHead(200, { 'content-type': type, 'content-length': size, 'accept-ranges': 'bytes', 'cache-control': 'no-store' }); fs.createReadStream(f).pipe(r);
 }).listen(PORT, '127.0.0.1', () => {
   const c = tinkerCfg();
-  console.log('Spoken World is at http://localhost:' + PORT + '  (Ctrl+C to stop)');
+  console.log('Koemachi is at http://localhost:' + PORT + '  (Ctrl+C to stop)');
   console.log('Model: Tinker, ' + c.model + (c.url && c.key ? '' : '  (NOT READY: set ' + [!c.url && 'TINKER_BASE_URL', !c.key && 'TINKER_API_KEY'].filter(Boolean).join(' and ') + ' in ' + path.join(__dirname, '..', '.env') + ')'));
 });

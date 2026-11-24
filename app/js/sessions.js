@@ -1,4 +1,4 @@
-/* Spoken World · sessions: the model calls whose results were kept, written as chat examples to data/sessions.jsonl (by the local server).
+/* Koemachi · sessions: the model calls whose results were kept, written as chat examples to data/sessions.jsonl (by the local server).
    A result counts as kept when it did not fail and was not undone within KEEP_MS (30 s). Each line is {"messages":[system, user, assistant]}:
    for a spoken command, system = the instructions and catalog, user = the scene, recent commands and the sentence, assistant = what the model answered;
    for a new kind of object, system = the code-writing rules, user = what to build, assistant = the code that was kept (after Look & Fix).

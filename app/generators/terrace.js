@@ -12,10 +12,10 @@
     floor: (p, lx, lz) => (Math.abs(lx) <= p.width / 2 && Math.abs(lz) <= p.depth / 2 ? p.height : null),
     build(b, p, rand) {
       const w = p.width, d = p.depth, h = p.height, snowy = C.season === 'winter' && p.top !== 'asphalt' && p.top !== 'concrete', top = snowy ? '#edf2f6' : TOPS[p.top] || C.paving;
-      b.box(w, h - 0.06, d, p.wall, 0, 0, 0, { tex: 'stone' }); // the stone-faced body
-      b.box(w, 0.06, d, top, 0, h - 0.06, 0, !snowy && p.top === 'grass' ? { tex: 'grass' } : !snowy && p.top === 'sand' ? { tex: 'sand' } : {}); // the top
+      if (h > 0.1) b.box(w, h - 0.06, d, p.wall, 0, 0, 0, { tex: 'stone' }); // the stone-faced body (a slab thinner than this is only its top: a box of no height would be drawn a metre tall)
+      b.box(w, Math.min(0.06, h), d, top, 0, Math.max(0, h - 0.06), 0, !snowy && p.top === 'grass' ? { tex: 'grass' } : !snowy && p.top === 'sand' ? { tex: 'sand' } : {}); // the top
       if (h > 1.4) for (let y = 0.9; y < h - 0.5; y += 0.9) b.box(w + 0.04, 0.05, d + 0.04, mix(p.wall, '#000000', 0.18), 0, y, 0, { noShadow: true }); // courses of the dry-stone wall
-      b.box(w + 0.16, 0.14, d + 0.16, mix(p.wall, '#ffffff', 0.25), 0, h - 0.2, 0); // coping stones along the edge
+      if (h > 0.3) b.box(w + 0.16, 0.14, d + 0.16, mix(p.wall, '#ffffff', 0.25), 0, h - 0.2, 0); // coping stones along the edge
     },
   };
 })();

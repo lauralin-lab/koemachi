@@ -1,4 +1,4 @@
-// Builds Spoken World into site/dist: the page in app/ with site/tinker.js loaded first, so that the AI (Inkling via Tinker, through the local server),
+// Builds Koemachi into site/dist: the page in app/ with site/tinker.js loaded first, so that the AI (Inkling via Tinker, through the local server),
 // voice input (Web Speech) and file saving come from the host in that file.
 import { cpSync, rmSync, mkdirSync, readFileSync, writeFileSync, copyFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';

@@ -165,6 +165,7 @@
     if (isEN(s)) return enOther(clause, ph);
     // undo / clay
     { const g = /^(?:关掉|关闭|取消|去掉|没有)重力$|^(?:零|无)重力$|^失重$/.test(s) ? 0 : /^(?:低|弱|月球)重力$/.test(s) ? 0.17 : /^(?:恢复|打开|开启)重力$|^(?:正常|地球)重力$|^重力恢复(?:正常)?$/.test(s) ? 1 : /^(?:强|高|双倍)重力$/.test(s) ? 2 : null; if (g != null) return [{ op: 'env', gravity: g }]; }
+    if (/^(?:把(?:它|这个|这个物体|这个东西)?)?(?:保存|存|导出|存成|保存成|保存为|存为)(?:成|为|到)?(?:一个)?(?:代码)?生成器(?:文件)?(?:吧)?$/.test(s)) return [{ op: 'savegen' }];
     if (/^(?:撤销|撤回|回退|还原|取消刚才的?(?:操作)?|取消上一步|上一步|退一步|撤销上一步|不对撤销|undo|撤销一下|反悔)$/.test(s)) return [{ op: 'undo' }];
     if (/^(?:切到|切换到?|打开|开启|进入|用|来个|变成)?白模(?:模式)?$/.test(s)) return [{ op: 'clay', on: true }];
     if (/^(?:关闭|退出|取消|关掉)白模(?:模式)?$|^恢复(?:颜色|材质|彩色)$|^彩色(?:模式)?$/.test(s)) return [{ op: 'clay', on: false }];
@@ -463,6 +464,7 @@
     const s = enNorm(clause); if (!s) return []; let m, r, sp;
     if (/^(?:make it |switch to |turn (?:it )?to |set (?:it )?to |change (?:it )?to )?(?:day|daylight|broad daylight|day ?time)$/.test(s)) return [{ op: 'env', time: 12 }];
     { const g = /^(?:turn off|switch off|remove|no|zero) (?:the )?gravity$|^gravity off$/.test(s) ? 0 : /^(?:low|moon|lunar|weak) gravity$/.test(s) ? 0.17 : /^(?:normal|earth|regular) gravity$|^(?:turn|switch|bring) (?:the )?gravity (?:back )?on$|^(?:bring|turn) (?:the )?gravity back(?: on)?$|^gravity (?:on|back on|back)$/.test(s) ? 1 : /^(?:heavy|strong|double) gravity$/.test(s) ? 2 : null; if (g != null) return [{ op: 'env', gravity: g }]; } // a rule of the world, said like the weather
+    if (/^(?:save|export|keep|store) (?:this|it|that)(?: object| thing)?(?: as| to| into)?(?: a| an| the)? (?:code )?generator(?: file)?$|^save (?:a |the |this )?generator$|^save as (?:a )?generator$/.test(s)) return [{ op: 'savegen' }];
     if (/^(?:undo|undo that|undo it|undo the last one|go back|revert|revert that|take that back|cancel that|never mind|nevermind|scratch that|oops|no undo|undo please)$/.test(s)) return [{ op: 'undo' }];
     if (/^(?:clay|clay mode|clay view|whitebox|white box|whitebox mode|switch to clay(?: mode)?|turn on clay(?: mode)?|clay(?: mode)? on|enable clay(?: mode)?|show (?:me )?(?:the )?clay|go clay)$/.test(s)) return [{ op: 'clay', on: true }];
     if (/^(?:clay(?: mode)? off|turn off clay(?: mode)?|exit clay(?: mode)?|disable clay(?: mode)?|leave clay(?: mode)?|back to colou?r|show (?:the )?(?:colou?rs|materials|textures)|restore (?:the )?(?:colou?rs|materials)|colou?r mode|no clay|full colou?r)$/.test(s)) return [{ op: 'clay', on: false }];
@@ -1110,10 +1112,11 @@
         res = again;
       }
       outcome = res.match ? (saved.length ? 'fixed' : 'looks right') : 'still off';
-      if (res.match) st.end(saved.length ? T('已修正：' + fixedWhat.join('，'), 'Fixed: ' + fixedWhat.join(', ')) : T('看起来没问题', 'Looks right'), saved.length ? 'fix' : 'ok');
-      else st.end(T('还有问题：' + res.problems.join('，'), 'Still off: ' + res.problems.join(', ')), 'fix');
+      const save = { label: T('保存为生成器', 'Save as generator'), run: () => YX.saveGenerator(type) };
+      if (res.match) st.end(saved.length ? T('已修正：' + fixedWhat.join('，'), 'Fixed: ' + fixedWhat.join(', ')) : T('看起来没问题', 'Looks right'), saved.length ? 'fix' : 'ok', save);
+      else st.end(T('还有问题：' + res.problems.join('，'), 'Still off: ' + res.problems.join(', ')), 'fix', save);
     } catch (e) { outcome = 'error: ' + String((e && (e.message || e.code)) || e).slice(0, 120); console.warn('look & fix', e); st.end(T('没能检查', 'Check skipped'), ''); }
-    finally { LF.busy--; LF.save(base + '.json', JSON.stringify({ type, label: job.label, ask, outcome, ms: Math.round(performance.now() - t0), first: res && saved.length ? { problems: saved[0].problems, fix: saved[0].fix } : null, rounds: saved, skipped: LF.skipped.filter((x) => x.ask === ask) }, null, 1), true); LF.outcomes.push({ type, label: job.label, outcome, rounds: saved.length, ms: Math.round(performance.now() - t0) }); keepInvent(job, cur); }
+    finally { LF.busy--; if (YX.custom[type] && YX.custom[type].origin) YX.custom[type].origin.look = outcome; LF.save(base + '.json', JSON.stringify({ type, label: job.label, ask, outcome, ms: Math.round(performance.now() - t0), first: res && saved.length ? { problems: saved[0].problems, fix: saved[0].fix } : null, rounds: saved, skipped: LF.skipped.filter((x) => x.ask === ask) }, null, 1), true); LF.outcomes.push({ type, label: job.label, outcome, rounds: saved.length, ms: Math.round(performance.now() - t0) }); keepInvent(job, cur); }
   }
   function keepInvent(job, code) { // what the model wrote for a new kind of object, as it stands at the end, is a kept result (see sessions.js)
     if (!YX.sessions || !code) return;
@@ -1131,7 +1134,7 @@
       let sc = await genCode(job, first, { preview: true }), meta;
       try { meta = await validate(sc, job); }
       catch (err) { entry.msgs = [T('修正中…', 'Fixing it…')]; logUp(entry); sc = await genCode(job, first, { preview: false, error: String(err.message || err).slice(0, 200), draft: sc.code.slice(0, 6000) }); meta = await validate(sc, job); }
-      const type = YX.registerCustom(meta, sc.code); let o = null;
+      const type = YX.registerCustom(meta, sc.code); let o = null; YX.custom[type].origin = { ask: ((entry.text ? entry.text + ' — ' : '') + job.label + ': ' + job.brief).slice(0, 300), model: 'Inkling via Tinker', look: '' }; YX.lastBuilt = type;
       if (job.repIds) {
         for (const id of job.repIds) { const x = W.objs.get(id); if (!x) continue; if (x.wk) x.wk.stop(); x.hold = false; YX.become(x, type, job.params, {}); YX.fx.flash(x, 0xffffff, 1.1); if (x.y < 3) YX.fx.ring(x.x, x.z, Math.max(1.5, x.fr * 1.6), 0xe0533a); o = o || x; }
         YX.sfx('born'); if (o) YX.tween(0.6, () => {}, { done: () => YX.shove(o) });

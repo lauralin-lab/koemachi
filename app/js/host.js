@@ -1,4 +1,4 @@
-/* Spoken World · host: where the page lives.
+/* Koemachi · host: where the page lives.
    The world asks its home for a few things and does not care who provides them:
 
      ai      Promise<fn | null>    fn(input, { modelTier: 'quick'|'default'|'complex', task, onText({text}), signal }) -> Promise<{ text }>

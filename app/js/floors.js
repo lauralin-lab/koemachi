@@ -1,4 +1,4 @@
-/* Spoken World · floors: walkable surfaces that are not the ground (terraces, stairs, piers).
+/* Koemachi · floors: walkable surfaces that are not the ground (terraces, stairs, piers).
    A generator that has a `floor(p, lx, lz)` function (local metres in, height of its top at that spot out, or null outside it) is a floor.
    YX.floorAt(x, z, maxY, skip, below)  the height of the highest floor under (x, z) that is not above maxY: 0 when there is none. `below` (an id) limits it to
    floors made before that one: a floor can stand on an earlier floor (steps on a terrace), never the other way round.

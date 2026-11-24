@@ -1,4 +1,4 @@
-/* Spoken World · film: record a 16:9 clip of the world and play it back. */
+/* Koemachi · film: record a 16:9 clip of the world and play it back. */
 'use strict';
 (function () {
   const YX = window.YX, W = YX.world, T = YX.T, U = YX.ui, $ = (id) => document.getElementById(id);

@@ -620,7 +620,7 @@
     const m = normMeta(meta), old = YX.custom[m.name];
     if (old && old.worker) try { old.worker.terminate(); } catch (e) {}
     if (G[m.name] && !G[m.name].custom) m.name = m.name + '_x';
-    YX.custom[m.name] = { meta: m, code, cache: new Map(), worker: null, pend: new Map(), seq: 0, url: null };
+    YX.custom[m.name] = { meta: m, code, cache: new Map(), worker: null, pend: new Map(), seq: 0, url: null, origin: old ? old.origin : null }; // origin: what was asked for, and how Look & Fix judged it (kept for "Save as generator")
     const sky = m.motion === 'fly' || m.motion === 'drift' || m.motion === 'hover';
     G[m.name] = { custom: true, label: m.label, cls: sky ? 'sky' : m.motion === 'wander' ? 'creature' : m.motion === 'drive' ? 'vehicle' : 'prim', solid: sky || m.motion === 'wander' || m.size[1] < 0.45 ? false : Math.max(m.size[0], m.size[2]) < 0.9 ? 'trunk' : 'box', /* a made-up object is as solid as a built-in one: nobody walks through a slide */ face: m.motion === 'drive' ? 'road' : 'me', motion: m.motion, alt: Math.max(8, m.size[1] * 2 + 6), speed: m.motion === 'fly' ? 6 : m.motion === 'drive' ? 6 : 1.4, block: !sky, params: m.params, dims: m.dims, mainColor: m.params.color ? 'color' : Object.keys(m.params).find((k) => m.params[k].color) || null, nouns: [m.label.toLowerCase(), m.name], foot: () => [m.size[0], m.size[2]] };
     YX.buildNouns();
