@@ -1,6 +1,6 @@
 // Builds Spoken World into site/dist: the page in app/ with site/tinker.js loaded first, so that the AI (Inkling via Tinker, through the local server),
 // voice input (Web Speech) and file saving come from the host in that file.
-import { cpSync, rmSync, mkdirSync, readFileSync, writeFileSync, copyFileSync } from 'node:fs';
+import { cpSync, rmSync, mkdirSync, readFileSync, writeFileSync, copyFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -21,7 +21,10 @@ function patch(file, pairs) {
   writeFileSync(p, s);
 }
 
-// the only change to the page itself: the Tinker host loads first. Its wording reaches the page through the host (app/js/host.js).
+// every file in app/generators/ is a generator: one script tag each, in name order ("_common.js" first), right after the built-in ones
+const gens = readdirSync(join(app, 'generators')).filter((n) => n.endsWith('.js')).sort();
+patch('index.html', [['<script src="js/gens2.js"></script>', '<script src="js/gens2.js"></script>\n' + gens.map((n) => '<script src="generators/' + n + '"></script>').join('\n')]]);
+// the only other change to the page itself: the Tinker host loads first. Its wording reaches the page through the host (app/js/host.js).
 patch('index.html', [
   ['<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">', '<script>window.SW_BUILD=' + JSON.stringify(build) + ';</script>\n<script src="js/tinker.js"></script>\n<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">'],
 ]);

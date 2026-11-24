@@ -18,7 +18,8 @@ const DATA = fs.mkdtempSync(path.join(os.tmpdir(), 'sw-data-')); // what the pag
 const { chromium } = require('playwright');
 
 const here = __dirname;
-const SIM = new Set('t1 d4 r1 w1 dr1 m1 wd1 aim1 people1 rig1 grav1 guide1 aim2 rev1 out1 rig2 lights1 route1 aim3 rig3 pend1 door1'.split(' '));
+const NATIVE = new Set('lookfix1 session1 koemachi1'.split(' ')); // scenarios about this fork's own features: they run in Koemachi
+const SIM = new Set('t1 d4 r1 w1 dr1 m1 wd1 aim1 people1 rig1 grav1 guide1 aim2 rev1 out1 rig2 lights1 route1 aim3 rig3 pend1 door1 koemachi1'.split(' '));
 const three = [path.join(here, 'node_modules/three/build/three.min.js')].find((f) => fs.existsSync(f)); // served in place of the CDN copy when installed, so the tests run offline
 
 async function serveTinker() { // the real local server, in tinker mode, over a fresh build
@@ -36,9 +37,11 @@ const FAKE_SPEECH = `(() => { // SpeechRecognition on top of the fake microphone
 async function tinkerRoutes(p) { // what Tinker would answer, as the Messages API streams it
   await p.addInitScript(FAKE_SPEECH);
   await p.route('**/__tinker/messages', async (route) => {
+    try {
     const body = route.request().postDataJSON(), text = await p.evaluate(async (m) => { const s = await window.claude.use('sample'); return (await s(m, {})).text; }, body.messages);
     const ev = (t, d) => 'event: ' + t + '\ndata: ' + JSON.stringify(Object.assign({ type: t }, d)) + '\n\n', fenced = '```\n' + text + '\n```';
     await route.fulfill({ status: 200, contentType: 'text/event-stream', body: ev('message_start', { message: { model: 'stand-in', usage: { input_tokens: 10, output_tokens: 1 } } }) + ev('content_block_delta', { index: 0, delta: { type: 'text_delta', text: fenced } }) + ev('message_delta', { delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 5 } }) + ev('message_stop', {}) });
+    } catch (e) { /* the page was closed while the stand-in model was still answering: nothing to do */ }
   });
 }
 async function runOne(browser, port, name, shot) {
@@ -53,6 +56,7 @@ async function runOne(browser, port, name, shot) {
   await p.addInitScript("try{localStorage.setItem('yanchu.prefs.v2', JSON.stringify({ui:'" + (process.env.LANG_UI || 'en') + "'}))}catch(e){}");
   await p.goto('http://127.0.0.1:' + port + '/', { timeout: 180000 }); await p.waitForTimeout(3000);
   await p.evaluate('window.YX&&YX.ui&&YX.ui.skipTitle&&YX.ui.skipTitle()');
+  if (!NATIVE.has(name)) await p.evaluate(fs.readFileSync(path.join(here, 'fixtures', 'legacy_town.js'), 'utf8') + ';YX.legacyTown.setup();'); // the engine scenarios run in the original town; the Koemachi ones in Koemachi
   let res; try { res = await p.evaluate('(async()=>{' + body + '\n})()'); } catch (e) { res = 'EVAL ERROR: ' + String(e.message).slice(0, 1500); }
   if (shot) await p.screenshot({ path: shot });
   await ctx.close();

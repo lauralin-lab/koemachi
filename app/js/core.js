@@ -358,7 +358,7 @@
     const key = str + '|' + color + '|' + (bg || '');
     let e = textCache.get(key);
     if (e) return e;
-    const F = 72, font = "700 " + F + "px 'Noto Sans SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',system-ui,sans-serif";
+    const F = 72, font = "700 " + F + "px 'Noto Sans JP','Noto Sans SC','Hiragino Sans','PingFang SC','Hiragino Sans GB','Microsoft YaHei',system-ui,sans-serif";
     const c = document.createElement('canvas'); let g = c.getContext('2d'); g.font = font;
     const tw = Math.max(20, g.measureText(str || ' ').width), pad = bg ? 34 : 10;
     c.width = Math.min(2048, Math.ceil(tw + pad * 2)); c.height = F + (bg ? 52 : 26);

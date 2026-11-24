@@ -120,6 +120,7 @@
     if (patch.ground != null && GROUNDS[String(patch.ground).toLowerCase()]) { E.ground = String(patch.ground).toLowerCase(); out.push(YX.T('地面 ', 'Ground: ') + E.ground); }
     if (patch.light != null && ['soft', 'normal', 'hard'].includes(String(patch.light))) { E.light = String(patch.light); out.push(YX.T('光线 ' + ({ soft: '柔和', normal: '自然', hard: '硬朗' })[E.light], E.light.charAt(0).toUpperCase() + E.light.slice(1) + ' light')); }
     if (patch.look != null && LOOKS[String(patch.look).toLowerCase()] != null) { E.look = String(patch.look).toLowerCase(); renderer.domElement.style.filter = LOOKS[E.look]; out.push(YX.T('影调 ', 'Look: ') + E.look); }
+    if (patch.haze != null && isFinite(+patch.haze)) { E.haze = clamp(+patch.haze, 0, 4); out.push(YX.T('薄雾 ' + E.haze, 'Haze ' + E.haze)); }
     if (patch.az != null && isFinite(+patch.az)) { E.az = +patch.az; out.push(YX.T('调整光线方向', 'Light direction changed')); }
     if (patch.lightFrom) {
       const v = YX.viewNow(), side = String(patch.lightFrom).toLowerCase();
@@ -156,7 +157,7 @@
     const U = sky.material.uniforms;
     U.top.value.setRGB(zen[0], zen[1], zen[2]); U.hor.value.setRGB(hor[0], hor[1], hor[2]); U.bot.value.setRGB(hor[0] * 0.55, hor[1] * 0.55, hor[2] * 0.6);
     U.sunDir.value.copy(sunDir); const sv = (1 - c) * (1 - cur.fog) * smooth(-0.08, 0.05, e); U.sunCol.value.setRGB(sc[0] * sv, sc[1] * sv, sc[2] * sv);
-    scene.fog.color.setRGB(hor[0], hor[1], hor[2]); scene.fog.density = 0.0021 + cur.fog * 0.024 + cur.rain * 0.003 + cur.snow * 0.005;
+    scene.fog.color.setRGB(hor[0], hor[1], hor[2]); scene.fog.density = 0.0021 + (W.env.haze || 0) * 0.0022 + cur.fog * 0.024 + cur.rain * 0.003 + cur.snow * 0.005;
     const day = e > -0.05, ld = day ? sunDir : new THREE.Vector3(-sunDir.x * 0.6, Math.max(0.4, -sunDir.y), -sunDir.z * 0.6 + 0.3).normalize();
     sun.intensity = sunI * (day ? smooth(-0.05, 0.12, e) : smooth(0.05, 0.3, -e)); sun.color.setRGB(sc[0], sc[1], sc[2]);
     const P = W.player, tx = Math.round(P.x / 6) * 6, tz = Math.round(P.z / 6) * 6;
@@ -257,7 +258,7 @@
     try { applyBuilt(o, builtinParts(o, def), opt); } catch (e) { console.warn('build failed', o.type, e); if (!o.mesh) applyBuilt(o, pendingParts(o), opt); }
   };
   YX.applyBuilt = applyBuilt;
-  function syncHolder(o) { o.holder.position.set(o.x, o.y, o.z); o.holder.rotation.set(0, o.rot, o.bank || 0); o.holder.scale.set(o.s[0] * (o.pop == null ? 1 : o.pop), o.s[1] * (o.pop == null ? 1 : o.pop), o.s[2] * (o.pop == null ? 1 : o.pop)); }
+  function syncHolder(o) { o.holder.position.set(o.x, o.y + (o.base || 0), o.z); o.holder.rotation.set(0, o.rot, o.bank || 0); o.holder.scale.set(o.s[0] * (o.pop == null ? 1 : o.pop), o.s[1] * (o.pop == null ? 1 : o.pop), o.s[2] * (o.pop == null ? 1 : o.pop)); }
   YX.syncHolder = syncHolder;
   YX.spawn = function (d, opt) {
     opt = opt || {};
@@ -425,6 +426,7 @@
   };
   function blocked(x, z, r, opt) {
     if (Math.abs(x) > 600 || Math.abs(z) > 600) return true;
+    if (opt.self && YX.floorAt && !opt.self.attach) { const d0 = YX.defOf(opt.self); if (d0 && d0.cls !== 'sky' && Math.abs(YX.floorAt(x, z, Infinity, opt.self) - (opt.self.base || 0)) > 0.7) return true; } // a terrace edge, a drop, a wall of stone: not a place to walk or to put something
     for (const o of W.objs.values()) {
       if (o.dead || o === opt.self || o.attach || o.y > 2.5) continue;
       const def = YX.defOf(o); if (!def || def.block === false) continue;
@@ -842,9 +844,11 @@
       const sp = (P.fly ? 15 : 5.2) * (I.run ? 2.3 : 1), fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw), rx = Math.cos(P.yaw), rz = -Math.sin(P.yaw);
       const k = 1 - Math.exp(-12 * dt); P.vx = lerp(P.vx, (fx * mz + rx * mx) * sp, k); P.vz = lerp(P.vz, (fz * mz + rz * mx) * sp, k);
       let nx = clamp(P.x + P.vx * dt, -520, 520), nz = clamp(P.z + P.vz * dt, -520, 520);
+      if (!P.fly && YX.floorAt) { const feet = P.y - 1.7, wall = (x, z) => YX.floorAt(x, z, Infinity) > feet + 0.8; if (wall(nx, nz)) { if (!wall(nx, P.z)) nz = P.z; else if (!wall(P.x, nz)) nx = P.x; else { nx = P.x; nz = P.z; } } } // a terrace edge higher than a step is a wall
       P.x = nx; P.z = nz;
-      if (P.fly) { P.y = clamp(P.y + ((I.up ? 1 : 0) - (I.down ? 1 : 0)) * sp * 0.7 * dt, 1.7, 400); if (P.y <= 1.701 && I.down) P.fly = false; }
-      else P.y = lerp(P.y, 1.7, 1 - Math.exp(-9 * dt));
+      const fl = YX.floorAt ? YX.floorAt(P.x, P.z, Infinity) : 0;
+      if (P.fly) { P.y = clamp(P.y + ((I.up ? 1 : 0) - (I.down ? 1 : 0)) * sp * 0.7 * dt, fl + 1.7, 400); if (P.y <= fl + 1.701 && I.down) P.fly = false; }
+      else P.y = lerp(P.y, (YX.floorAt ? YX.floorAt(P.x, P.z, P.y - 1.7 + 0.9) : 0) + 1.7, 1 - Math.exp(-11 * dt));
       const moving = Math.hypot(P.vx, P.vz); bobT += dt * moving * 1.5;
       if (YX.insideTick) YX.insideTick(dt);
       if ((W.tickNo = (W.tickNo || 0) + 1) % 50 === 0) for (const o of W.objs.values()) { const d = YX.defOf(o); if (!d || d.cls !== 'creature' || o.attach || o.dead || o.y > 0.5 || o === W.grabbed || (o.tw && o.tw.m) || (o.motion && o.motion !== 'none')) continue; const q = solidPush(o.x, o.z, clamp(o.fr * 0.8, 0.22, 0.6), o, null); if (q[2] && (YX.defOf(q[2]) || {}).cls === 'building' && Math.hypot(q[0] - o.x, q[1] - o.z) > 0.05) YX.moveTo(o, q[0], q[1], o.y); } // nobody is left standing inside a wall
@@ -863,7 +867,7 @@
      If there is none in sight the answer is "I can't see one", never "then the nearest one somewhere else". */
   const _fr = new THREE.Frustum(), _pm = new THREE.Matrix4(), _wb = new THREE.Box3();
   function rayBox(o, P, dir, maxT) { // where a ray enters o's box (in world metres), or -1
-    const c = Math.cos(o.rot), s = Math.sin(o.rot), ox = P.x - o.x, oy = P.y - o.y, oz = P.z - o.z;
+    const c = Math.cos(o.rot), s = Math.sin(o.rot), ox = P.x - o.x, oy = P.y - o.y - (o.base || 0), oz = P.z - o.z;
     const lo = [(ox * c - oz * s) / o.s[0], oy / o.s[1], (ox * s + oz * c) / o.s[2]], ld = [(dir.x * c - dir.z * s) / o.s[0], dir.y / o.s[1], (dir.x * s + dir.z * c) / o.s[2]], mn = [o.box.min.x, o.box.min.y, o.box.min.z], mx = [o.box.max.x, o.box.max.y, o.box.max.z];
     let t0 = 0, t1 = maxT; for (let i = 0; i < 3; i++) { if (Math.abs(ld[i]) < 1e-7) { if (lo[i] < mn[i] || lo[i] > mx[i]) return -1; } else { let a = (mn[i] - lo[i]) / ld[i], b = (mx[i] - lo[i]) / ld[i]; if (a > b) { const q = a; a = b; b = q; } t0 = Math.max(t0, a); t1 = Math.min(t1, b); if (t0 > t1) return -1; } }
     return t0;
@@ -872,7 +876,7 @@
   // you can stand in and see through. -1: the ray only passes through that air. Used for what the crosshair is on and for what hides what.
   const walled = (o, def) => !!(def && def.cls === 'building' && def.foot && o.foot && o.box);
   function wallsT(o, P, dir, maxT) {
-    const hx = o.foot[0] / (2 * o.s[0]), hz = o.foot[1] / (2 * o.s[2]), c = Math.cos(o.rot), s = Math.sin(o.rot), ox = P.x - o.x, oy = P.y - o.y, oz = P.z - o.z;
+    const hx = o.foot[0] / (2 * o.s[0]), hz = o.foot[1] / (2 * o.s[2]), c = Math.cos(o.rot), s = Math.sin(o.rot), ox = P.x - o.x, oy = P.y - o.y - (o.base || 0), oz = P.z - o.z;
     const lo = [(ox * c - oz * s) / o.s[0], oy / o.s[1], (ox * s + oz * c) / o.s[2]], ld = [(dir.x * c - dir.z * s) / o.s[0], dir.y / o.s[1], (dir.x * s + dir.z * c) / o.s[2]], mn = [-hx, o.box.min.y, -hz], mx = [hx, o.box.max.y, hz];
     let t0 = 0, t1 = maxT; for (let i = 0; i < 3; i++) { if (Math.abs(ld[i]) < 1e-7) { if (lo[i] < mn[i] || lo[i] > mx[i]) return -1; } else { let a = (mn[i] - lo[i]) / ld[i], b = (mx[i] - lo[i]) / ld[i]; if (a > b) { const q = a; a = b; b = q; } t0 = Math.max(t0, a); t1 = Math.min(t1, b); if (t0 > t1) return -1; } }
     return t0;
@@ -912,7 +916,7 @@
       if (o.dead || o === W.grabbed || !o.box) continue;
       if (o === inB) continue; const ro = YX.roomOf(o); if (inB ? ro !== inB.id : ro != null) continue;
       const def = YX.defOf(o), ex = o.x - P.x, ez = o.z - P.z; if (ex * ex + ez * ez > 170 * 170) continue;
-      const c = Math.cos(o.rot), s = Math.sin(o.rot), ox = P.x - o.x, oy = P.y - o.y, oz = P.z - o.z;
+      const c = Math.cos(o.rot), s = Math.sin(o.rot), ox = P.x - o.x, oy = P.y - o.y - (o.base || 0), oz = P.z - o.z;
       const lo = [(ox * c - oz * s) / o.s[0], oy / o.s[1], (ox * s + oz * c) / o.s[2]], ld = [(_dir.x * c - _dir.z * s) / o.s[0], _dir.y / o.s[1], (_dir.x * s + _dir.z * c) / o.s[2]];
       const mn = [o.box.min.x, o.box.min.y, o.box.min.z], mx = [o.box.max.x, o.box.max.y, o.box.max.z];
       let t0 = 0, t1 = 1e9, hit = true;
@@ -925,9 +929,9 @@
         }
       }
       if (!hit && def && def.cls === 'creature' && o.size) { // the living are small and do not stand still: the crosshair only has to pass close by one
-        const cy0 = o.y + o.size[1] / 2 - P.y, tt = ex * _dir.x + cy0 * _dir.y + ez * _dir.z;
+        const cy0 = o.y + (o.base || 0) + o.size[1] / 2 - P.y, tt = ex * _dir.x + cy0 * _dir.y + ez * _dir.z;
         if (tt > 0.6 && tt < 60) { const lat = Math.hypot(_dir.x * tt - ex, _dir.z * tt - ez), tol = Math.max(o.size[0], o.size[2]) / 2 + Math.max(0.3, tt * 0.022); if (lat < tol && Math.abs(_dir.y * tt - cy0) < o.size[1] / 2 + Math.max(0.3, tt * 0.02) && lat / tol < magS) { magS = lat / tol; mag = o; magT = tt; } } }
-      if (!hit && !(def && def.flat)) { const cy = o.y + o.size[1] / 2 - P.y, d = Math.hypot(ex, cy, ez); if (d < 90 && d > 0.5) { const dot = (ex * _dir.x + cy * _dir.y + ez * _dir.z) / d; if (dot > cb) { cb = dot; cone = o; } } }
+      if (!hit && !(def && def.flat)) { const cy = o.y + (o.base || 0) + o.size[1] / 2 - P.y, d = Math.hypot(ex, cy, ez); if (d < 90 && d > 0.5) { const dot = (ex * _dir.x + cy * _dir.y + ez * _dir.z) / d; if (dot > cb) { cb = dot; cone = o; } } }
     }
     { // of everything whose box the line of sight passes through, nearest first: which one does it actually meet?
       cands.sort((a, b) => a.t0 - b.t0); let E = null, Et = 1e9; const miss = [];
@@ -1087,6 +1091,7 @@
     const t = W.time, P = W.player;
     for (const o of W.objs.values()) {
       if (o.motion && o.motion !== 'none') updateMotion(o, dt, t);
+      if (o.motion && o.motion !== 'none' && YX.baseOf) { const bb = YX.baseOf(o); if (bb !== o.base) { o.base = bb; syncHolder(o); } } // a walker climbing steps rises with them
       if (o.y > 0.0005) gravity(o, dt); else if (o.vy) o.vy = 0;
       if (o.anims.length) { const dx = o.x - P.x, dz = o.z - P.z; if (dx * dx + dz * dz < 150 * 150) YX.applyAnims(o.anims, t + (o.seed % 97) * 0.1, dt, o.attach ? (W.objs.get(o.attach.to) || {}).vel || 0 : o.vel); }
     }
