@@ -15,6 +15,7 @@ three-tier mind, the film tools, the page) and changes the following:
    (sea.js), a railway timetable and level crossing (railway.js), four seasons (seasons.js);
  - new features: Look & Fix (lookfix.js), kept-example logging (sessions.js), Japanese phrasings (ja.js), "Save as generator" (savegen.js),
    Train my world (trainworld.js, train/train.py, and /__train and /__model in site/serve.js: a LoRA trained on the edits you kept, and switching the town to it),
+   Replay it (replay.js: a recording of a request with the model's work written on the picture, ending with a lap around the result),
    Watch it learn (watchlearn.js: one request built by the base model and by each checkpoint, side by side), and undoing a build also stops it and removes its examples
    from the training data (mind.js, ops.js, sessions.js);
  - the tests were adapted (tests/run.js, tests/check_generators.js and new scenarios); the original starting town is kept in tests/fixtures/legacy_town.js only so that the engine

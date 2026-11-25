@@ -65,6 +65,11 @@ Sentences the built-in grammar knows run instantly and cost nothing; anything el
   Only operations that make something new (add, scatter, row, crowd) are built; anything that would change what already stands, or take a long build (invent, plan), is listed in the panel as text
   instead, so a comparison never changes your town. **Clear lanes** removes it all. Each model is asked once, so a comparison of four costs four calls.
 
+- **Replay it** (built). The **● Replay it** button (bottom left) films the whole story of a request: every frame of the 3D view is drawn together with what Tinker is doing (the model in use,
+  your sentence, *Inkling · working…*, Look & Fix's *Checking… / Fixing…*, and the names above the lanes of Watch it learn), and recorded at 1280×720 with your microphone if you allow it. When the
+  work has been quiet for three seconds (or you press Esc) the camera takes one lap around the result and the clip opens like any other. It can be up to 150 s long (the ordinary
+  film tools stop at 10 s). Everything stays on your computer; the clip is saved by your browser.
+
 ## Add your own generators
 
 Every object type is one file in [`app/generators/`](app/generators/README.md): a header comment and a `build(b, p, rand)` function. When the model builds something you like, press

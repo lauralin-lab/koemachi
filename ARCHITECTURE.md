@@ -46,6 +46,7 @@ film.js      recording, playing a recorded clip back
 inside.js director.js multicam.js talk.js play.js after.js grass.js post.js wet.js perf.js guide.js
              rooms, AI shot design, three cameras, the townspeople, playback, consequences, grass, grading, rain, frame-rate guard, first-run guide
 trainworld.js   Train my world: the panel (kept-edit count, Train, progress, checkpoints, Use); the server side is /__train and /__model in site/serve.js, the training is train/train.py
+replay.js   Replay it: the 3D view plus Tinker captions drawn onto one 16:9 canvas and recorded (with the microphone if allowed), ends with an orbit; the clip goes to film.js (filmTake)
 watchlearn.js   Watch it learn: one prompt to the base model and each checkpoint (the call carries modelId; the server maps it), each answer built in its own lane
 lookfix.js   Look & Fix: a picture of a new object is shown to the model with the request; the fix rounds themselves are in mind.js (inventRun)
 sessions.js  kept results (not failed, not undone within 30 s) written as chat examples to data/sessions.jsonl

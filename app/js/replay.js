@@ -1,0 +1,99 @@
+/* Koemachi · Replay it: film the whole story of a request, with Tinker's part in it written on the picture, and end with one lap around the result.
+   Press ● Replay it, then talk to the town as usual (hold Space), or run Watch it learn. Every frame of the 3D view is drawn onto a 16:9 canvas together with
+   what the model is doing (your sentence, the model in use, "Inkling is building…", Look & Fix's note, the names above the lanes of Watch it learn), and that
+   canvas is recorded, with your microphone if you allow it. When the work has been quiet for a moment (or you press Esc) the camera orbits the result once,
+   then the clip is finished and opens like any other clip (film.js). Nothing leaves your computer. */
+'use strict';
+(function () {
+  const YX = window.YX, T = YX.T, W = YX.world, M = YX.mind, U = YX.ui, $ = (id) => document.getElementById(id);
+  const SIZE = [1280, 720], CAP_S = 150, QUIET_S = 3, LAP_S = 8;
+  const R = (YX.replay = { rec: null, entries: [], lastMs: 0 });
+  const canvas = YX.three.renderer.domElement;
+  let btn = null, model = { label: '', base: '' };
+
+  /* ---------- what the model is doing, as the picture's captions ---------- */
+  const prevLog = YX.hooks.log; YX.hooks.log = function (e) { if (R.rec && e && !R.entries.includes(e)) R.entries.push(e); if (prevLog) return prevLog.apply(this, arguments); };
+  const clip = (ctx, s, w) => { s = String(s || ''); while (s.length > 3 && ctx.measureText(s).width > w) s = s.slice(0, -2); return s; };
+  function lines() { // up to three short lines, newest work last
+    const out = [], e = R.entries[R.entries.length - 1];
+    if (M && M.said) out.push({ k: 'say', t: '“' + M.said + '”' });
+    if (e) { const st = e.status === 'run' ? T('进行中', 'working') : e.status === 'ok' ? T('完成', 'done') : T('没成功', 'did not work'); out.push({ k: 'ai', t: (e.tier === 'invent' ? 'Inkling · ' : e.tier === 'quick' || e.tier === 'local' ? (e.tier === 'local' ? T('内置语法 · ', 'built-in grammar · ') : 'Inkling · ') : '') + st + (e.msgs && e.msgs.length ? ' · ' + String(e.msgs[e.msgs.length - 1]).replace(/\s+/g, ' ') : '') }); }
+    const lf = $('lfBox'); if (lf && lf.textContent.trim()) out.push({ k: 'lf', t: 'Look & Fix · ' + Array.from(lf.children).map((d) => { const c = d.cloneNode(true); c.querySelectorAll('button,a').forEach((x) => x.remove()); return c.textContent.trim(); }).filter(Boolean).slice(-1)[0] });
+    if (R.rec && R.rec.final) out.push({ k: 'lap', t: T('最后一圈', 'One last lap') });
+    return out.slice(-3);
+  }
+  function project(x, y, z) { const cam = YX.three.camera, v = project.v || (project.v = new window.THREE.Vector3()); v.set(x, y, z).project(cam); return v.z > 1 || v.z < -1 ? null : [(v.x * 0.5 + 0.5) * SIZE[0], (-v.y * 0.5 + 0.5) * SIZE[1]]; }
+  function pill(g, text, x, y, o) {
+    o = o || {}; g.font = '600 ' + (o.size || 22) + 'px system-ui, -apple-system, sans-serif'; const w = Math.min(o.max || 900, g.measureText(text).width + 28), h = (o.size || 22) + 16;
+    g.fillStyle = o.bg || 'rgba(14,16,20,.72)'; g.beginPath(); (g.roundRect ? g.roundRect(x - (o.center ? w / 2 : 0), y - h, w, h, h / 2) : g.rect(x - (o.center ? w / 2 : 0), y - h, w, h)); g.fill();
+    g.fillStyle = o.fg || '#fff'; g.textBaseline = 'middle'; g.textAlign = o.center ? 'center' : 'left'; g.fillText(clip(g, text, w - 28), x + (o.center ? 0 : 14), y - h / 2 + 1);
+  }
+  function paintFrame() {
+    const r = R.rec; if (!r) return; const g = r.g;
+    g.fillStyle = '#000'; g.fillRect(0, 0, SIZE[0], SIZE[1]); try { g.drawImage(canvas, 0, 0, SIZE[0], SIZE[1]); } catch (e) {}
+    const secs = (performance.now() - r.t0) / 1000;
+    pill(g, 'Tinker · ' + (model.label || model.base || 'Inkling'), 24, 62, { size: 20, bg: 'rgba(40,110,60,.82)' });
+    pill(g, '● ' + Math.floor(secs / 60) + ':' + String(Math.floor(secs % 60)).padStart(2, '0'), SIZE[0] - 24 - 100, 62, { size: 20 });
+    const WL = YX.watchLearn; if (WL && WL.lanes.length) for (const l of WL.lanes) { if (!l.anchor) continue; const p = project(l.anchor.x, (l.anchor.y || 0) + 3.4, l.anchor.z); if (p) pill(g, l.c.short + (l.c.nll != null ? ' · loss ' + (+l.c.nll).toFixed(2) : ''), p[0], p[1], { size: 24, center: true }); }
+    const ls = lines(); let y = SIZE[1] - 28; for (let i = ls.length - 1; i >= 0; i--) { const l = ls[i]; pill(g, l.t, 24, y, { size: l.k === 'say' ? 26 : 21, max: SIZE[0] - 48, bg: l.k === 'ai' ? 'rgba(40,110,60,.82)' : l.k === 'lf' ? 'rgba(120,86,20,.84)' : l.k === 'lap' ? 'rgba(14,16,20,.9)' : 'rgba(14,16,20,.72)' }); y -= (l.k === 'say' ? 26 : 21) + 24; }
+  }
+  R.captions = () => lines().map((l) => l.t);
+  R.sample = () => { const r = R.rec; if (!r) return null; const d = r.g.getImageData(0, 0, SIZE[0], SIZE[1] - 140).data; let lum = 0, lit = 0; for (let i = 0; i < d.length; i += 4 * 97) { const v = d[i] + d[i + 1] + d[i + 2]; lum += v; if (v > 30) lit++; } return { avg: Math.round(lum / (d.length / (4 * 97)) / 3), lit }; };
+
+  /* ---------- recording ---------- */
+  const mimes = (audio) => (audio ? ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'] : ['video/mp4;codecs=avc1.640028', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']);
+  const pick = (audio) => mimes(audio).find((m) => { try { return MediaRecorder.isTypeSupported(m); } catch (e) { return false; } }) || '';
+  const busy = () => (M && M.active && M.active.size > 0) || (YX.lookFix && YX.lookFix.busy > 0) || (YX.watchLearn && YX.watchLearn.busy);
+  async function start() {
+    if (R.rec) return finish();
+    if (YX.filmBusy && YX.filmBusy()) return U.toast(T('正在录别的片子', 'Another clip is being recorded'));
+    if (typeof MediaRecorder === 'undefined' || !canvas.captureStream) return U.toast(T('这个浏览器不支持录制', 'This browser cannot record'));
+    let mic = null; try { mic = await Promise.race([navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }), new Promise((ok) => setTimeout(() => ok(null), 6000))]); } catch (e) { mic = null; } // no microphone, no permission or no answer: a silent film
+    try { const c = await (await fetch('/__config', { cache: 'no-store' })).json(); model = { base: c.model || '', label: c.active ? c.active.label : (c.model || '').replace(/^.*\//, '') + ' · ' + T('基础', 'base') }; } catch (e) {}
+    const comp = document.createElement('canvas'); comp.width = SIZE[0]; comp.height = SIZE[1]; const g = comp.getContext('2d', { willReadFrequently: true });
+    U.closePops(); YX.filmFrame(SIZE); document.body.classList.add('cinema'); R.entries = [];
+    await new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok)));
+    const stream = comp.captureStream(30); if (mic) for (const t of mic.getAudioTracks()) stream.addTrack(t);
+    const mime = pick(!!mic); let mr; try { mr = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 6e6 } : undefined); } catch (e) { cleanup(mic); return U.toast(T('录制没能启动', 'Recording could not start')); }
+    const rec = (R.rec = { mr, mic, comp, g, chunks: [], t0: performance.now(), type: (mr.mimeType || mime || 'video/webm').split(';')[0], seen: false, quiet: 0, final: false, raf: 0, last: performance.now() });
+    mr.ondataavailable = (e) => { if (e.data && e.data.size) rec.chunks.push(e.data); }; mr.onstop = () => done(rec);
+    mr.start(1000); paintBtn();
+    const loop = () => { if (R.rec !== rec) return; rec.raf = requestAnimationFrame(loop); paintFrame(); tick(rec); };
+    loop();
+    U.toast(mic ? T('开始录制：说话吧。做完后我会绕它一圈。Esc 提前结束', 'Recording with your voice: talk to the town. When the work is done I take one lap around it. Esc to finish early') : T('开始录制（没有麦克风声音）。Esc 提前结束', 'Recording (no microphone). Esc to finish early'));
+  }
+  function tick(rec) { // hud, the quiet that ends the story, the time limit
+    const now = performance.now(), dt = (now - rec.last) / 1000; rec.last = now; const secs = (now - rec.t0) / 1000, hud = $('cine'); if (hud) hud.textContent = 'REPLAY ' + Math.floor(secs) + 's' + (rec.final ? T(' · 最后一圈', ' · last lap') : T(' · Esc 结束', ' · Esc to finish'));
+    if (rec.final) return;
+    if (busy()) { rec.seen = true; rec.quiet = 0; } else if (rec.seen) rec.quiet += dt;
+    if ((rec.seen && rec.quiet >= QUIET_S) || secs >= CAP_S) finish();
+  }
+  function target() { // what the last lap goes around: the middle lane of Watch it learn, else what was just built, else what was last touched
+    const WL = YX.watchLearn; if (WL && WL.lanes.length) { const l = WL.lanes[Math.floor(WL.lanes.length / 2)], o = l && l.ids.map((id) => W.objs.get(id)).find((x) => x && !x.dead); if (o) return o; }
+    if (YX.lastBuilt) { const l = Array.from(W.objs.values()).filter((o) => o.type === YX.lastBuilt && !o.dead); if (l.length) return l[l.length - 1]; }
+    const f = W.focusId != null ? W.objs.get(W.focusId) : null; return f && !f.dead && f.type !== '__pending' ? f : null;
+  }
+  function finish() {
+    const rec = R.rec; if (!rec || rec.final) return; rec.final = true; paintBtn();
+    const tg = target(), lap = R.lapS || LAP_S; let went = false;
+    if (tg && YX.startMove) { try { YX.cineStop(); went = YX.startMove('orbit', tg, { dur: lap, deg: 360 }, () => setTimeout(() => stop(rec), 400)); } catch (e) { went = false; } }
+    if (!went) setTimeout(() => stop(rec), 300);
+    else setTimeout(() => stop(rec), (lap * 3 + 8) * 1000); // a slow machine may never finish the lap: the film ends anyway
+  }
+  function stop(rec) { if (R.rec !== rec || rec.stopping) return; rec.stopping = true; rec.secs = (performance.now() - rec.t0) / 1000; cancelAnimationFrame(rec.raf); try { rec.mr.stop(); } catch (e) { done(rec); } }
+  function cleanup(mic) { if (mic) for (const t of mic.getTracks()) t.stop(); document.body.classList.remove('cinema'); YX.filmFrame(null); const hud = $('cine'); if (hud) hud.textContent = ''; }
+  function done(rec) {
+    if (R.rec !== rec) return; R.rec = null; cleanup(rec.mic); paintBtn();
+    const blob = new Blob(rec.chunks, { type: rec.type }); R.lastMs = Math.round(rec.secs * 1000);
+    if (!blob.size) return U.toast(T('没有录到画面', 'Nothing was recorded'));
+    const d = new Date(), p2 = (v) => String(v).padStart(2, '0'); R.last = { size: blob.size, secs: rec.secs, type: rec.type, audio: !!rec.mic };
+    if (YX.filmTake) YX.filmTake(blob, rec.type, rec.secs, '', 'koemachi-replay-' + p2(d.getHours()) + p2(d.getMinutes()) + p2(d.getSeconds()));
+  }
+  window.addEventListener('keydown', (e) => { if (R.rec && e.code === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(); } }, true);
+
+  /* ---------- the button ---------- */
+  function paintBtn() { if (!btn) return; const on = !!R.rec; btn.textContent = on ? (R.rec.final ? T('收尾中…', 'Finishing…') : T('■ 结束并环绕', '■ Finish with a lap')) : T('● 回放', '● Replay it'); btn.classList.toggle('on', on); btn.disabled = on && R.rec.final; }
+  const st = document.createElement('style'); st.textContent = '#swReplayBtn{position:fixed;left:10px;bottom:74px;z-index:4;padding:5px 10px;border:0;border-radius:6px;background:rgba(14,16,20,.7);color:#fff;font:600 11px/1.2 var(--f-ui,system-ui);cursor:pointer}#swReplayBtn:hover,#swReplayBtn.on{background:rgba(190,50,40,.88)}#swReplayBtn:disabled{opacity:.6;cursor:default}#swTrain{bottom:104px!important}';
+  document.head.appendChild(st); btn = document.createElement('button'); btn.id = 'swReplayBtn'; btn.title = T('录下整个过程：画面、模型在做什么、你的声音，最后绕它一圈', 'Film the whole story: the picture, what the model is doing, your voice, and a lap around the result'); btn.onclick = start; document.body.appendChild(btn); paintBtn();
+  R.start = start; R.finish = finish;
+})();
