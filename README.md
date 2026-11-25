@@ -47,6 +47,16 @@ The **日本語 / English** button beside the input bar chooses the language you
 | film | orbit this house · record it | 环绕这个房子拍一圈 | この家の周りを一周して撮って · 録画して |
 | keep | save this as a generator | 保存为生成器 | ジェネレーターとして保存して |
 
+**With the Tinker features** (the buttons are in the bottom-left corner; see [The Tinker features](#the-tinker-features)):
+
+| | What to do |
+|---|---|
+| Look & Fix | say something that makes a *new kind* of object, e.g. *build a ramen food truck here*, *a stone tanuki statue by the shrine*, 在这里造一辆拉面小摊车, ここにラーメンの屋台を作って. Then watch the corner note: *Checking… / Fixing… / Fixed: …* |
+| Undo a build | *undo* (or **Z**) once removes the whole generated object, including its Look & Fix revisions, and stops a build in progress. An undone result is not kept for training |
+| Train my world | keep making things you like (the corner counter shows *Learned from: N / 30 edits*), then press **Train my world**, wait for the epochs, press **Use** on a checkpoint. Now the same sentences go to *your* model. **Use base model** switches back |
+| Watch it learn | type a sentence in the Train panel (e.g. *put three cherry trees here*), press **Watch it learn**, walk along the street to compare *Base*, *Epoch 1*, *Epoch 2*… side by side |
+| Replay it | press **● Replay it**, hold **Space** and say a sentence (*🎙 listening…* and your words are written on the film), watch it build, then the camera takes one lap. Esc ends it early |
+
 Sentences the built-in grammar knows run instantly and cost nothing; anything else goes to the model (about 2–10 s), and a new kind of object takes about a minute.
 
 ## The Tinker features
