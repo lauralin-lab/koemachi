@@ -19,7 +19,8 @@ three-tier mind, the film tools, the page) and changes the following:
    from the training data (mind.js, ops.js, sessions.js);
  - the tests were adapted (tests/run.js, tests/check_generators.js and new scenarios); the original starting town is kept in tests/fixtures/legacy_town.js only so that the engine
    scenarios written for it still run (copied unchanged from spoken-world's app/js/stage.js).
-Modifications are Copyright 2026 the Koemachi contributors and are released under the same license.
+Modifications are Copyright 2026 lauralin-lab and the Koemachi contributors (https://github.com/lauralin-lab/koemachi) and are released under the same license.
+This is not the original Spoken World, and the original author does not endorse it. The original copyright and license notices above are kept as the license requires.
 
 This product includes or uses the following third-party work:
 

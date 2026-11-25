@@ -5,7 +5,7 @@ An original Japanese seaside hill town you shape by talking to it, in your brows
 
 <p align="center"><img src="docs/hero.jpg" alt="Koemachi at golden hour: a harbour with fishing boats and a lighthouse, a railway and a covered shopping street on the first terrace, wooden houses climbing a wooded hill to a shrine, cherry petals falling" width="860"></p>
 
-> Koemachi is a fork of [Spoken World](https://github.com/ryannli/spoken-world) by ryannli (Apache-2.0), rebuilt on Thinking Machines' Inkling through Tinker. It adds *Look & Fix*,
+> **Koemachi is a modified version of [Spoken World](https://github.com/ryannli/spoken-world) by ryannli (Apache-2.0), made by [lauralin-lab](https://github.com/lauralin-lab). It is not the original and is not endorsed by its author.** It runs on Thinking Machines' Inkling through Tinker. It adds *Look & Fix*,
 > *Train my world* (a LoRA trained on the edits you kept) and *Watch it learn* (the base model and each checkpoint side by side). See [NOTICE](NOTICE) for what changed.
 
 **A fictional town, built entirely from code.** Koemachi sits on a slope between the sea and a wooded hill: a small fishing harbour with a breakwater and a lighthouse, a single-track
@@ -24,7 +24,7 @@ Say something that does not exist yet, *"put a ramen food truck here, with steam
 Needs Node 18 or later, Chrome, and a Tinker API key. There is nothing to install.
 
 ```sh
-git clone https://github.com/<you>/koemachi && cd koemachi
+git clone https://github.com/lauralin-lab/koemachi && cd koemachi
 cp .env.example .env              # then put your Tinker base URL and key in it
 node site/build.mjs
 node site/serve.js                # http://localhost:8080   (PORT=8090 node site/serve.js for another port)
