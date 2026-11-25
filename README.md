@@ -55,7 +55,7 @@ The **日本語 / English** button beside the input bar chooses the language you
 | Undo a build | *undo* (or **Z**) once removes the whole generated object, including its Look & Fix revisions, and stops a build in progress. An undone result is not kept for training |
 | Train my world | keep making things you like (the corner counter shows *Learned from: N / 30 edits*), then press **Train my world**, wait for the epochs, press **Use** on a checkpoint. Now the same sentences go to *your* model. **Use base model** switches back |
 | Watch it learn | type a sentence in the Train panel (e.g. *put three cherry trees here*), press **Watch it learn**, walk along the street to compare *Base*, *Epoch 1*, *Epoch 2*… side by side |
-| Replay it | press **● Replay it**, hold **Space** and say a sentence (*🎙 listening…* and your words are written on the film), watch it build, then the camera takes one lap. Esc ends it early |
+| Replay it | press **● Replay it**, hold **Space** and say a sentence (*🎙 listening…* and your words are written on the film), watch it build (as long as it takes), press **Esc** when you want to stop, and the camera takes one lap |
 
 Sentences the built-in grammar knows run instantly and cost nothing; anything else goes to the model (about 2–10 s), and a new kind of object takes about a minute.
 
@@ -76,9 +76,8 @@ Sentences the built-in grammar knows run instantly and cost nothing; anything el
   instead, so a comparison never changes your town. **Clear lanes** removes it all. Each model is asked once, so a comparison of four costs four calls.
 
 - **Replay it** (built). The **● Replay it** button (bottom left) films the whole story of a request: every frame of the 3D view is drawn together with what Tinker is doing (the model in use,
-  your sentence, *Inkling · working…*, Look & Fix's *Checking… / Fixing…*, and the names above the lanes of Watch it learn), and recorded at 1280×720 with your microphone if you allow it. When the
-  work has been quiet for three seconds (or you press Esc) the camera takes one lap around the result and the clip opens like any other. It can be up to 150 s long (the ordinary
-  film tools stop at 10 s). Everything stays on your computer; the clip is saved by your browser.
+  your sentence, *Inkling · working…*, Look & Fix's *Checking… / Fixing…*, and the names above the lanes of Watch it learn), and recorded at 1280×720 with your microphone if you allow it. There is no time limit: it keeps filming through the long builds and the pauses until
+  you press **Esc** or the button, then the camera takes one lap around the result and the clip opens like any other (the ordinary film tools stop at 10 s). Everything stays on your computer; the clip is saved by your browser.
 
 ## Add your own generators
 

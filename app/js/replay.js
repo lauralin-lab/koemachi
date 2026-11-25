@@ -6,8 +6,8 @@
 'use strict';
 (function () {
   const YX = window.YX, T = YX.T, W = YX.world, M = YX.mind, U = YX.ui, $ = (id) => document.getElementById(id);
-  const SIZE = [1280, 720], CAP_S = 150, QUIET_S = 3, LAP_S = 8;
-  const R = (YX.replay = { rec: null, entries: [], lastMs: 0 });
+  const SIZE = [1280, 720], QUIET_S = 3, LAP_S = 8; // no time limit: the film runs until you stop it
+  const R = (YX.replay = { rec: null, entries: [], lastMs: 0, autoStop: false });
   const canvas = YX.three.renderer.domElement;
   let btn = null, model = { label: '', base: '' };
 
@@ -70,13 +70,13 @@
     mr.start(1000); paintBtn();
     const loop = () => { if (R.rec !== rec) return; rec.raf = requestAnimationFrame(loop); paintFrame(); tick(rec); };
     loop();
-    U.toast(mic ? T('开始录制：说话吧。做完后我会绕它一圈。Esc 提前结束', 'Recording with your voice: talk to the town. When the work is done I take one lap around it. Esc to finish early') : T('开始录制（没有麦克风声音）。Esc 提前结束', 'Recording (no microphone). Esc to finish early'));
+    U.toast(mic ? T('开始录制，没有时间限制：说话吧。想结束就按 Esc 或点按钮，我会绕它一圈', 'Recording with your voice, no time limit: talk to the town. Press Esc or the button when you want to stop, and I take one lap around it') : T('开始录制（没有麦克风声音），没有时间限制。按 Esc 结束', 'Recording (no microphone), no time limit. Esc to stop'));
   }
   function tick(rec) { // hud, the quiet that ends the story, the time limit
-    const now = performance.now(), dt = (now - rec.last) / 1000; rec.last = now; const secs = (now - rec.t0) / 1000, hud = $('cine'); if (hud) hud.textContent = 'REPLAY ' + Math.floor(secs) + 's' + (rec.final ? T(' · 最后一圈', ' · last lap') : T(' · Esc 结束', ' · Esc to finish'));
+    const now = performance.now(), dt = (now - rec.last) / 1000; rec.last = now; const secs = (now - rec.t0) / 1000, hud = $('cine'); if (hud) hud.textContent = 'REPLAY ' + Math.floor(secs) + 's' + (rec.final ? T(' · 最后一圈', ' · last lap') : T(' · 按 Esc 结束', ' · Esc to stop'));
     if (rec.final) return;
-    if (busy()) { rec.seen = true; rec.quiet = 0; } else if (rec.seen) rec.quiet += dt;
-    if ((rec.seen && rec.quiet >= QUIET_S) || secs >= CAP_S) finish();
+    if (busy()) { rec.seen = true; rec.quiet = 0; } else rec.quiet += dt;
+    if (R.autoStop && rec.seen && rec.quiet >= QUIET_S) finish(); // off by default: a build can take a minute and has pauses; the film ends when you press the button or Esc
   }
   function target() { // what the last lap goes around: the middle lane of Watch it learn, else what was just built, else what was last touched
     const WL = YX.watchLearn; if (WL && WL.lanes.length) { const l = WL.lanes[Math.floor(WL.lanes.length / 2)], o = l && l.ids.map((id) => W.objs.get(id)).find((x) => x && !x.dead); if (o) return o; }
