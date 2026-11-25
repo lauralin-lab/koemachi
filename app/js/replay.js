@@ -14,13 +14,23 @@
   /* ---------- what the model is doing, as the picture's captions ---------- */
   const prevLog = YX.hooks.log; YX.hooks.log = function (e) { if (R.rec && e && !R.entries.includes(e)) R.entries.push(e); if (prevLog) return prevLog.apply(this, arguments); };
   const clip = (ctx, s, w) => { s = String(s || ''); while (s.length > 3 && ctx.measureText(s).width > w) s = s.slice(0, -2); return s; };
-  function lines() { // up to three short lines, newest work last
-    const out = [], e = R.entries[R.entries.length - 1];
-    if (M && M.said) out.push({ k: 'say', t: '“' + M.said + '”' });
+  function spoken() { // the sentence as the town shows it while you hold Space (the page hides that caption in film mode, so it is read here and drawn into the picture)
+    const el = $('spellText'), on = el && /\bon\b/.test(el.className); let t = '';
+    if (on) { const c = el.cloneNode(true); c.querySelectorAll('.seal').forEach((x) => x.remove()); t = c.textContent.trim(); }
+    if (t) { R.said = t; R.saidDone = /\bdone\b/.test(el.className); }
+    return t;
+  }
+  const listening = () => { const m = $('mic'); return !!(m && m.classList.contains('on')); };
+  function lines() { // up to four short lines, newest work last
+    const out = [], e = R.entries[R.entries.length - 1], live = $('liveMsg');
+    const said = spoken() || R.said || (M && M.said) || '';
+    if (said) out.push({ k: 'say', t: (listening() ? '🎙 ' : '“') + said + (listening() ? '…' : '”') });
+    else if (listening()) out.push({ k: 'say', t: T('🎙 聆听中…', '🎙 Listening…') });
+    if (!e && live && live.textContent.trim()) out.push({ k: 'ai', t: live.textContent.trim() });
     if (e) { const st = e.status === 'run' ? T('进行中', 'working') : e.status === 'ok' ? T('完成', 'done') : T('没成功', 'did not work'); out.push({ k: 'ai', t: (e.tier === 'invent' ? 'Inkling · ' : e.tier === 'quick' || e.tier === 'local' ? (e.tier === 'local' ? T('内置语法 · ', 'built-in grammar · ') : 'Inkling · ') : '') + st + (e.msgs && e.msgs.length ? ' · ' + String(e.msgs[e.msgs.length - 1]).replace(/\s+/g, ' ') : '') }); }
     const lf = $('lfBox'); if (lf && lf.textContent.trim()) out.push({ k: 'lf', t: 'Look & Fix · ' + Array.from(lf.children).map((d) => { const c = d.cloneNode(true); c.querySelectorAll('button,a').forEach((x) => x.remove()); return c.textContent.trim(); }).filter(Boolean).slice(-1)[0] });
     if (R.rec && R.rec.final) out.push({ k: 'lap', t: T('最后一圈', 'One last lap') });
-    return out.slice(-3);
+    return out.slice(-4);
   }
   function project(x, y, z) { const cam = YX.three.camera, v = project.v || (project.v = new window.THREE.Vector3()); v.set(x, y, z).project(cam); return v.z > 1 || v.z < -1 ? null : [(v.x * 0.5 + 0.5) * SIZE[0], (-v.y * 0.5 + 0.5) * SIZE[1]]; }
   function pill(g, text, x, y, o) {
@@ -51,7 +61,7 @@
     let mic = null; try { mic = await Promise.race([navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }), new Promise((ok) => setTimeout(() => ok(null), 6000))]); } catch (e) { mic = null; } // no microphone, no permission or no answer: a silent film
     try { const c = await (await fetch('/__config', { cache: 'no-store' })).json(); model = { base: c.model || '', label: c.active ? c.active.label : (c.model || '').replace(/^.*\//, '') + ' · ' + T('基础', 'base') }; } catch (e) {}
     const comp = document.createElement('canvas'); comp.width = SIZE[0]; comp.height = SIZE[1]; const g = comp.getContext('2d', { willReadFrequently: true });
-    U.closePops(); YX.filmFrame(SIZE); document.body.classList.add('cinema'); R.entries = [];
+    U.closePops(); YX.filmFrame(SIZE); document.body.classList.add('cinema'); R.entries = []; R.said = ''; R.saidDone = false;
     await new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok)));
     const stream = comp.captureStream(30); if (mic) for (const t of mic.getAudioTracks()) stream.addTrack(t);
     const mime = pick(!!mic); let mr; try { mr = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 6e6 } : undefined); } catch (e) { cleanup(mic); return U.toast(T('录制没能启动', 'Recording could not start')); }

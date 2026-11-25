@@ -6,6 +6,7 @@ const until = async (f, n) => { for (let t = 0; t < (n || 200) && !f(); t++) awa
 R.lapS = 0.5; // the test browser draws a few frames a second, so a lap of 8 s of film time would take minutes
 await R.start(); out.push('recording: ' + !!R.rec + ', button "' + document.getElementById('swReplayBtn').textContent + '"');
 await wait(1500); const s0 = R.sample(); out.push('first seconds: picture lit pixels ' + s0.lit + ', average brightness ' + s0.avg);
+{ const sp = document.getElementById('spellText'), mic = document.getElementById('mic'); mic.classList.add('on'); sp.textContent = 'make zorb'; sp.className = 'on partial'; await wait(300); out.push('while holding: ' + JSON.stringify(R.captions())); sp.textContent = 'make zorb R'; sp.className = 'on done'; mic.classList.remove('on'); await wait(300); out.push('after release: ' + JSON.stringify(R.captions())); sp.className = ''; await wait(300); out.push('caption faded on the page, still on the picture: ' + JSON.stringify(R.captions())); }
 M.commit('make zorb R'); await until(() => (R.rec && R.rec.seen), 100);
 const seen = new Set(); for (let t = 0; t < 400 && R.rec && !R.rec.final; t++) { for (const c of R.captions()) seen.add(c.replace(/\d+(\.\d)?s/g, 'Ns')); await wait(150); }
 out.push('captions drawn on the picture:\n  ' + Array.from(seen).slice(0, 9).join('\n  '));
