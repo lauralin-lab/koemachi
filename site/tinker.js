@@ -33,7 +33,8 @@
   function sample1(input, opts, t0) {
     const msgs = []; // the Messages API wants roles to alternate, starting with the user
     for (const m of typeof input === 'string' ? [{ role: 'user', content: input }] : input || []) { const role = m.role === 'assistant' ? 'assistant' : 'user', c = Array.isArray(m.content) ? m.content : String(m.content), last = msgs[msgs.length - 1]; if (last && last.role === role && typeof last.content === 'string' && typeof c === 'string') last.content += '\n\n' + c; else msgs.push({ role, content: c }); } // content may be a list of blocks (text and images), passed on as it is
-    return run({ max_tokens: MAX_TOKENS, stream: true, output_config: { effort: effortOf(opts) }, messages: msgs }, opts, t0);
+    const body = { max_tokens: MAX_TOKENS, stream: true, output_config: { effort: effortOf(opts) }, messages: msgs }; if (opts.modelId) body.koe_model = opts.modelId; // which model, by id (Watch it learn); the server maps it
+    return run(body, opts, t0);
   }
   async function run(body, opts, t0) {
     const r = await fetch(ENDPOINT, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), signal: opts.signal });

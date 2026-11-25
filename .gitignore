@@ -8,3 +8,4 @@ site/dist/
 tests/_*.js
 tests/package-lock.json
 data/
+train/.venv/

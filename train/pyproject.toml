@@ -1,0 +1,9 @@
+[project]
+name = "koemachi-train"
+version = "0.1.0"
+description = "Train my world: a LoRA on Inkling-2-Small from the edits you kept (run by site/serve.js, or by hand: uv run --project train python train/train.py)"
+requires-python = ">=3.11"
+dependencies = [
+    "tinker>=0.39.1",
+    "tinker-cookbook>=0.6.1",
+]

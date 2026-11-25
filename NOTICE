@@ -13,7 +13,10 @@ three-tier mind, the film tools, the page) and changes the following:
  - voice input uses the browser's Web Speech API;
  - the starting town is a new, original one (app/js/koemachi.js, app/generators/), with new engine parts for it: walkable terraces and steps (app/js/floors.js), an animated sea
    (sea.js), a railway timetable and level crossing (railway.js), four seasons (seasons.js);
- - new features: Look & Fix (lookfix.js), kept-example logging (sessions.js), Japanese phrasings (ja.js), "Save as generator" (savegen.js);
+ - new features: Look & Fix (lookfix.js), kept-example logging (sessions.js), Japanese phrasings (ja.js), "Save as generator" (savegen.js),
+   Train my world (trainworld.js, train/train.py, and /__train and /__model in site/serve.js: a LoRA trained on the edits you kept, and switching the town to it),
+   Watch it learn (watchlearn.js: one request built by the base model and by each checkpoint, side by side), and undoing a build also stops it and removes its examples
+   from the training data (mind.js, ops.js, sessions.js);
  - the tests were adapted (tests/run.js, tests/check_generators.js and new scenarios); the original starting town is kept in tests/fixtures/legacy_town.js only so that the engine
    scenarios written for it still run (copied unchanged from spoken-world's app/js/stage.js).
 Modifications are Copyright 2026 the Koemachi contributors and are released under the same license.

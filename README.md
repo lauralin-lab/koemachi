@@ -5,6 +5,9 @@ An original Japanese seaside hill town you shape by talking to it, in your brows
 
 <p align="center"><img src="docs/hero.jpg" alt="Koemachi at golden hour: a harbour with fishing boats and a lighthouse, a railway and a covered shopping street on the first terrace, wooden houses climbing a wooded hill to a shrine, cherry petals falling" width="860"></p>
 
+> Koemachi is a fork of [Spoken World](https://github.com/ryannli/spoken-world) by ryannli (Apache-2.0), rebuilt on Thinking Machines' Inkling through Tinker. It adds *Look & Fix*,
+> *Train my world* (a LoRA trained on the edits you kept) and *Watch it learn* (the base model and each checkpoint side by side). See [NOTICE](NOTICE) for what changed.
+
 **A fictional town, built entirely from code.** Koemachi sits on a slope between the sea and a wooded hill: a small fishing harbour with a breakwater and a lighthouse, a single-track
 railway with a level crossing and a tiny unstaffed station (a one- or two-car train passes every minute, and the crossing lamps flash and the barrier comes down), a covered shopping street
 (*shotengai*) with a ramen shop, a sweets shop, a general store and a bathhouse with a tall chimney, lanes four metres wide between wooden houses with tiled roofs and laundry on the balconies,
@@ -52,9 +55,15 @@ Sentences the built-in grammar knows run instantly and cost nothing; anything el
   problem ("wheels were floating") revises the code and rebuilds it, with the old look dissolving over the new, up to two rounds. It runs in the background: you see the object at once, a small
   note in the corner says *Checking… / Fixing… / Fixed: … / Looks right*, and the before and after pictures of every fix are kept in `data/lookfix/`. Thinking effort is set per kind of
   call in `site/tinker.js`; everything runs at `low`, which was the fastest setting that gave correct results in testing.
-- **Learning from your play** (built, the first half of *Train my world*). Every model result you keep (it did not fail and you did not undo it within 30 seconds) is written as a chat example to
-  `data/sessions.jsonl`. The corner counter shows *Learned from: N / 30 edits*. **Train my world** (training a LoRA on thinkingmachines/Inkling-2-Small from those examples, and switching the
-  town to your own model) and **Watch it learn** (the same request built by the base model and by each saved checkpoint, side by side along the street) are **not built yet**.
+- **Train my world** (built). Every model result you keep (it did not fail and you did not undo it within 30 seconds) is written as a chat example to `data/sessions.jsonl`; the corner counter
+  shows *Learned from: N / 30 edits*. From 30 edits, the **Train my world** button (bottom left) trains a LoRA (rank 16, 3 epochs) on thinkingmachines/Inkling-2-Small with `train/train.py`,
+  started by the local server (needs [uv](https://docs.astral.sh/uv/) and the same `TINKER_API_KEY`). The panel shows progress and loss; every epoch saves a checkpoint to `data/models.json`.
+  **Use** on a checkpoint switches the town to it (the server sends its model calls to that `tinker://…/sampler_weights/…` path through the same Messages API); **Use base model** switches back.
+  Training uses your Tinker account and is billed there. `SW_MIN_TRAIN=10` lowers the 30-edit threshold.
+- **Watch it learn** (built). In the same panel, type a sentence (it starts with your last command) and press **Watch it learn**: the base model and each checkpoint of the newest training run get
+  the very same prompt, and each answer is built in its own lane, 13 m apart to your right and 8 m ahead, with a name above it (*Base*, *Epoch 1*, *Epoch 2*…). Walk along the street to compare.
+  Only operations that make something new (add, scatter, row, crowd) are built; anything that would change what already stands, or take a long build (invent, plan), is listed in the panel as text
+  instead, so a comparison never changes your town. **Clear lanes** removes it all. Each model is asked once, so a comparison of four costs four calls.
 
 ## Add your own generators
 

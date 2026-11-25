@@ -97,7 +97,7 @@
   YX.undoDepth = () => undoStack.length;
   YX.peekUndo = () => undoStack[undoStack.length - 1] || null;
   YX.dropUndo = () => { undoStack.pop(); };
-  const touch = (ctx) => { if (!ctx.undo) { YX.pushUndo(); ctx.undo = true; } };
+  const touch = (ctx) => { if (!ctx.undo) { YX.pushUndo(); ctx.undo = true; ctx.mark = undoStack.length; } }; // ctx.mark: which undo step this action is (the stack depth after its snapshot), so what it made can be found again when it is undone
   const done = (ctx, o) => { if (o) { ctx.changed.push(o); mark(ctx, o); W.focusId = o.id; ctx.view.focusId = o.id; } };
 
   /* ---------- semantic resize ---------- */

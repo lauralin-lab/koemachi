@@ -965,12 +965,12 @@
       if (again && !n) { entry.msgs.push(T('这件事已经纠正过几次了：换更强的模型，连同周围一起重新安排…', 'This has been corrected a few times: handing it to the bigger model to rearrange it with its surroundings…')); logUp(entry); return route(text, rest, ph, entry, doneMsgs, ops, true); } // the small model judged that the player is struggling
       entry.abort = null; entry.first = first ? Math.round(first - entry.t0) : 0;
       if (!n) logEnd(entry, 'fail', T('没听懂这句，换个说法试试', 'Did not catch that. Try saying it another way')); else logEnd(entry, entry.warn && n === 1 ? 'fail' : 'ok');
-      if (entry.status === 'ok' && YX.sessions) { const i = sent.indexOf('\n\n## Current scene\n'); if (i > 0 && !big) YX.sessions.record({ kind: 'route', system: sent.slice(0, i), user: sent.slice(i + 2), output: res.text, since: entry.t0 }); } // a kept result, unless it is undone soon (sessions.js)
+      if (entry.status === 'ok' && YX.sessions) { const i = sent.indexOf('\n\n## Current scene\n'); if (i > 0 && !big) YX.sessions.record({ kind: 'route', system: sent.slice(0, i), user: sent.slice(i + 2), output: res.text, since: entry.t0, mark: ph.ctx.mark }); } // a kept result, unless it is undone soon (sessions.js)
     } catch (e) { entry.abort = null; if (e && e.text) { try { feed(e.text, true); } catch (x) {} } logEnd(entry, n ? 'ok' : 'fail', failText(e)); }
     finish(text, ops, entry.msgs, ph);
   }
   M.direct = function (text) { M.commit(text); };
-  M.routePrompt = routePrompt;
+  M.routePrompt = routePrompt; M.parseLines = parseLines;
 
   /* ================= tier 2 · inventing new generators ================= */
   const API_DOC_ZH = [
@@ -1079,11 +1079,12 @@
     rebuild();
     for (const [x, g] of ghosts) { x.holder.add(g); YX.tween(0.5, (k) => g.traverse((c) => { if (c.material) for (const m of [].concat(c.material)) m.opacity = 1 - k; }), { done: () => { x.holder.remove(g); g.traverse((c) => { if (c.material) for (const m of [].concat(c.material)) m.dispose(); }); } }); }
   }
-  async function checkOnce(o, ask, r) { // one look, with a time limit; one more try if it fails; null = give up on this one
+  async function checkOnce(o, ask, r, job) { // one look, with a time limit; one more try if it fails; null = give up on this one
     let last = null;
     for (let a = 0; a < 2; a++) {
-      const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 45000);
-      try { return await YX.lookFix.check(o, ask, r, ctl.signal); } catch (e) { last = e; if (!o || o.dead) throw e; console.warn('look & fix: check failed' + (a ? '' : ', trying once more'), e); } finally { clearTimeout(to); }
+      if (job && job.undone) throw { code: 'cancelled', message: 'undone' };
+      const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 45000), stop = () => ctl.abort(); if (job) job.ctl.signal.addEventListener('abort', stop);
+      try { return await YX.lookFix.check(o, ask, r, ctl.signal); } catch (e) { last = e; if (!o || o.dead) throw e; console.warn('look & fix: check failed' + (a ? '' : ', trying once more'), e); } finally { clearTimeout(to); if (job) job.ctl.signal.removeEventListener('abort', stop); }
     }
     YX.lookFix.skipped.push({ ask, round: r, reason: String((last && (last.message || last.code)) || last) }); return null;
   }
@@ -1094,7 +1095,7 @@
     try {
       st.say(T('检查中…', 'Checking…')); await new Promise((ok) => setTimeout(ok, 1300)); // the new object has finished appearing
       if (o.dead) { outcome = 'removed'; return st.end('', ''); }
-      res = await checkOnce(o, ask, 0); if (!res) { outcome = 'check skipped'; return st.end(T('已跳过检查', 'Check skipped'), ''); }
+      res = await checkOnce(o, ask, 0, job); if (!res) { outcome = 'check skipped'; return st.end(T('已跳过检查', 'Check skipped'), ''); }
       for (let r = 1; !res.match && r <= LF.rounds; r++) {
         st.say(T('修正中…（第 ' + r + ' 轮）', 'Fixing… (round ' + r + ')'), 'fix'); const before = res;
         const sc = await genCode(job, 'default', { preview: false, draft: cur.slice(0, 9000), look: res, label: 'look-fix r' + r });
@@ -1105,7 +1106,7 @@
         st.say(T('再看一遍…', 'Checking again…'));
         await new Promise((ok) => setTimeout(ok, 700)); // the new look is in, then looked at
         const o2 = live()[0]; if (!o2) { outcome = 'removed'; return st.end('', ''); }
-        const again = await checkOnce(o2, ask, r);
+        const again = await checkOnce(o2, ask, r, job);
         saved.push({ round: r, problems: before.problems, fix: before.fix, before: base + '-r' + r + '-before.jpg', after: again ? base + '-r' + r + '-after.jpg' : null, match: again ? again.match : null, afterProblems: again ? again.problems : null });
         LF.save(base + '-r' + r + '-before.jpg', before.shot.b64); if (again) LF.save(base + '-r' + r + '-after.jpg', again.shot.b64);
         if (!again) { outcome = 'fixed, final check skipped'; return st.end(T('已修正（最后一次检查已跳过）', 'Fixed (the last check was skipped)'), 'fix'); }
@@ -1115,14 +1116,21 @@
       const save = { label: T('保存为生成器', 'Save as generator'), run: () => YX.saveGenerator(type) };
       if (res.match) st.end(saved.length ? T('已修正：' + fixedWhat.join('，'), 'Fixed: ' + fixedWhat.join(', ')) : T('看起来没问题', 'Looks right'), saved.length ? 'fix' : 'ok', save);
       else st.end(T('还有问题：' + res.problems.join('，'), 'Still off: ' + res.problems.join(', ')), 'fix', save);
-    } catch (e) { outcome = 'error: ' + String((e && (e.message || e.code)) || e).slice(0, 120); console.warn('look & fix', e); st.end(T('没能检查', 'Check skipped'), ''); }
+    } catch (e) { if (job.undone) { outcome = 'undone'; st.end('', ''); } else { outcome = 'error: ' + String((e && (e.message || e.code)) || e).slice(0, 120); console.warn('look & fix', e); st.end(T('没能检查', 'Check skipped'), ''); } }
     finally { LF.busy--; if (YX.custom[type] && YX.custom[type].origin) YX.custom[type].origin.look = outcome; LF.save(base + '.json', JSON.stringify({ type, label: job.label, ask, outcome, ms: Math.round(performance.now() - t0), first: res && saved.length ? { problems: saved[0].problems, fix: saved[0].fix } : null, rounds: saved, skipped: LF.skipped.filter((x) => x.ask === ask) }, null, 1), true); LF.outcomes.push({ type, label: job.label, outcome, rounds: saved.length, ms: Math.round(performance.now() - t0) }); keepInvent(job, cur); }
   }
   function keepInvent(job, code) { // what the model wrote for a new kind of object, as it stands at the end, is a kept result (see sessions.js)
-    if (!YX.sessions || !code) return;
+    if (!YX.sessions || !code || job.undone) return;
     const p = inventPrompt(job), i = p.search(/\n## (Output format|输出格式)\n/); if (i < 0) return;
-    YX.sessions.record({ kind: 'invent', system: p.slice(i + 2), user: p.slice(0, i), output: code, since: job.entry && job.entry.t0 });
+    YX.sessions.record({ kind: 'invent', system: p.slice(i + 2), user: p.slice(0, i), output: code, since: job.entry && job.entry.t0, mark: job.mark });
   }
+  /* Undo takes a whole build back: every job that began at or after the undone step (its object, any Look & Fix round, and a build still being written) is stopped. */
+  const jobs = new Set();
+  const undo0 = YX.undo; YX.undo = function () {
+    const L = YX.undoDepth(), ok = undo0.apply(this, arguments);
+    if (ok) for (const j of Array.from(jobs)) if (j.mark != null && j.mark >= L) { j.undone = true; try { j.ctl.abort(); } catch (e) {} jobs.delete(j); }
+    return ok;
+  };
   let inventRunning = 0; const waiters = [];
   function slot() { if (inventRunning < 2) { inventRunning++; return Promise.resolve(); } return new Promise((r) => waiters.push(r)); }
   function release() { const w = waiters.shift(); if (w) w(); else inventRunning--; }
@@ -1152,12 +1160,12 @@
         for (const mk of marks) { try { mk.stop(); } catch (e) {} }
       }
       logEnd(entry, 'ok');
-      if (o && !job.noLook) lookFixRun(job, type, sc.code, o); // not awaited: the object is already on screen and the world stays playable
+      if (o && !job.noLook) { job.lf = true; lookFixRun(job, type, sc.code, o).finally(() => jobs.delete(job)); } // not awaited: the object is already on screen and the world stays playable
     } catch (e) {
       endWork(job);
       const o = W.objs.get(job.phId); if (o && o.type === '__pending') YX.removeObj(o, { animate: true });
-      logEnd(entry, 'fail', (e && e.code ? failText(e) : T('没能造出「' + job.label + '」：', 'Could not build “' + job.label + '”: ') + String((e && e.message) || e).slice(0, 80)) + (job.repIds ? T('；原来的保持不变', '. The original is unchanged') : ''));
-    } finally { release(); M.active.delete(job); }
+      logEnd(entry, 'fail', job.undone ? T('已撤销', 'Undone') : (e && e.code ? failText(e) : T('没能造出「' + job.label + '」：', 'Could not build “' + job.label + '”: ') + String((e && e.message) || e).slice(0, 80)) + (job.repIds ? T('；原来的保持不变', '. The original is unchanged') : ''));
+    } finally { release(); M.active.delete(job); if (!job.lf) jobs.delete(job); }
   }
   /* An invented object is asked to move in a way its declared nature does not allow (a hand-built car told to drive).
      What it can do was a guess made when it was built, so ask once, about the real thing, instead of refusing. */
@@ -1197,7 +1205,7 @@
         repNote: T('它要原位替换场景里已有的一个「' + YX.labelOf(d0) + '」（约 ' + r1(t0.size[0]) + '×' + r1(t0.size[1]) + '×' + r1(t0.size[2]) + ' 米，宽×高×深）：保持相近的占地和朝向（正面朝 +Z），让人一眼看出是它变成的。', 'It replaces an existing ' + YX.labelOf(d0) + ' in the scene (about ' + r1(t0.size[0]) + ' x ' + r1(t0.size[1]) + ' x ' + r1(t0.size[2]) + ' m, width x height x depth): keep a similar footprint and the same orientation (front toward +Z) so it reads as that object transformed.') };
       for (const o of reps) { o.hold = true; YX.fx.work(o, workText(job, 0)); ctx.changed.push(o); if (!ctx.group.includes(o.id)) ctx.group.push(o.id); }
       W.focusId = t0.id; ctx.view.focusId = t0.id;
-      entry.abort = () => job.ctl.abort(); logUp(entry); M.active.add(job); inventRun(job); YX.sfx('edit');
+      entry.abort = () => job.ctl.abort(); logUp(entry); job.mark = ctx.mark; jobs.add(job); M.active.add(job); inventRun(job); YX.sfx('edit');
       return { ok: true, pending: true, msg: T('开始把 ' + YX.lab(t0) + ' 重造成「' + label + '」，原物体先留在原地', 'Rebuilding ' + YX.lab(t0) + ' as “' + label + '”. It stays in place until the new one is ready') };
     }
     const size = live ? live.size : given || [3, 3, 3], P0 = op.place && typeof op.place === 'object' ? op.place : null, inAir = op.place === 'sky' || (P0 && (P0.above != null || +P0.height > 2.5));
@@ -1217,7 +1225,7 @@
     const entry = logStart(T('造一个新物体：', 'Build something new: ') + label, 'invent');
     const job = { name, label, brief, size, motion, phId: firstO.id, params, seed: firstO.seed, ctl: new AbortController(), entry };
     entry.abort = () => job.ctl.abort(); logUp(entry);
-    M.active.add(job); inventRun(job);
+    job.mark = ctx.mark; jobs.add(job); M.active.add(job); inventRun(job);
     YX.sfx('add');
     return { ok: true, pending: true, msg: T('开始造「' + label + '」', 'Building “' + label + '”') };
   };

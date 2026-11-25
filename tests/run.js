@@ -18,7 +18,7 @@ const DATA = fs.mkdtempSync(path.join(os.tmpdir(), 'sw-data-')); // what the pag
 const { chromium } = require('playwright');
 
 const here = __dirname;
-const NATIVE = new Set('lookfix1 session1 koemachi1 ja1 seasons1 generators1'.split(' ')); // scenarios about this fork's own features: they run in Koemachi
+const NATIVE = new Set('undo1 watch1 lookfix1 session1 koemachi1 ja1 seasons1 generators1'.split(' ')); // scenarios about this fork's own features: they run in Koemachi
 const SIM = new Set('t1 d4 r1 w1 dr1 m1 wd1 aim1 people1 rig1 grav1 guide1 aim2 rev1 out1 rig2 lights1 route1 aim3 rig3 pend1 door1 koemachi1 ja1 seasons1 generators1'.split(' '));
 const three = [path.join(here, 'node_modules/three/build/three.min.js')].find((f) => fs.existsSync(f)); // served in place of the CDN copy when installed, so the tests run offline
 
@@ -38,7 +38,7 @@ async function tinkerRoutes(p) { // what Tinker would answer, as the Messages AP
   await p.addInitScript(FAKE_SPEECH);
   await p.route('**/__tinker/messages', async (route) => {
     try {
-    const body = route.request().postDataJSON(), text = await p.evaluate(async (m) => { const s = await window.claude.use('sample'); return (await s(m, {})).text; }, body.messages);
+    const body = route.request().postDataJSON(), text = await p.evaluate(async (a) => { const s = await window.claude.use('sample'); return (await s(a.m, { modelId: a.id })).text; }, { m: body.messages, id: body.koe_model || null });
     const ev = (t, d) => 'event: ' + t + '\ndata: ' + JSON.stringify(Object.assign({ type: t }, d)) + '\n\n', fenced = '```\n' + text + '\n```';
     await route.fulfill({ status: 200, contentType: 'text/event-stream', body: ev('message_start', { message: { model: 'stand-in', usage: { input_tokens: 10, output_tokens: 1 } } }) + ev('content_block_delta', { index: 0, delta: { type: 'text_delta', text: fenced } }) + ev('message_delta', { delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 5 } }) + ev('message_stop', {}) });
     } catch (e) { /* the page was closed while the stand-in model was still answering: nothing to do */ }

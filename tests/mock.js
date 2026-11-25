@@ -28,7 +28,7 @@ b.anchor("top", 0, H*0.93, 0);`;
     if (s.includes('程序化生成器') || s.includes('procedural generator')) { if (window.__slowGen) await sleep(window.__slowGen); return stream(window.__badCode && !s.includes('运行出错') && !s.includes('failed when it ran') ? '//@meta {"name":"x"}\nb.box(1,1,1,"#fff"\n' : WINDMILL, opt, 90); }
     if (s.includes('布景师') || s.includes('set designer')) return stream(PLAN, opt, 80);
     const u = s.slice(Math.max(s.lastIndexOf('## 玩家说'), s.lastIndexOf('## The player says')));
-    if (window.__route) { const r = window.__route(u, s); if (r) return stream(r + '\n', opt); }
+    if (window.__route) { const r = window.__route(u, s, opt); if (r) return stream(r + '\n', opt); }
     if (/风车|windmill/i.test(u)) return stream('{"op":"invent","type":"windmill","label":"' + (/windmill/i.test(u) ? 'Windmill' : '风车') + '","brief":"a Dutch windmill that turns, white tower, red-brown cap, four blades","size":[7,13,7],"motion":"none","place":{"front":16}}\n', opt);
     if (/聊天|chatting/.test(u)) return stream('{"op":"crowd","count":7,"activity":"chat","place":{"front":7}}\n', opt);
     if (/渔村|fishing village/i.test(u)) return stream('{"op":"plan","brief":"seaside fishing village: white houses with blue roofs, sand, palm trees, a pier","clear":true}\n', opt);
