@@ -14,10 +14,11 @@
   /* ---------- what the model is doing, as the picture's captions ---------- */
   const prevLog = YX.hooks.log; YX.hooks.log = function (e) { if (R.rec && e && !R.entries.includes(e)) R.entries.push(e); if (prevLog) return prevLog.apply(this, arguments); };
   const clip = (ctx, s, w) => { s = String(s || ''); while (s.length > 3 && ctx.measureText(s).width > w) s = s.slice(0, -2); return s; };
+  { const sp = $('spellText'); if (sp && window.MutationObserver) new MutationObserver(() => { R.spellTick = performance.now(); }).observe(sp, { childList: true, characterData: true, subtree: true }); } // the page rewrites its caption on every partial and every final, even when the words are the same
   function spoken() { // the sentence as the town shows it while you hold Space (the page hides that caption in film mode, so it is read here and drawn into the picture)
     const el = $('spellText'), on = el && /\bon\b/.test(el.className); let t = '';
     if (on) { const c = el.cloneNode(true); c.querySelectorAll('.seal').forEach((x) => x.remove()); t = c.textContent.trim(); }
-    if (t && listening() && !R.gotWords && /\bdone\b/.test(el.className)) t = ''; // the page's caption of the PREVIOUS sentence is still fading: not this hold
+    if (t && !R.gotWords && R.holdT0 && !(R.spellTick >= R.holdT0)) t = ''; // the page's caption of the PREVIOUS sentence is still fading: only a caption written since this hold began counts (a recognizer that answers once, after you let go, still counts)
     if (t) { R.said = t; R.gotWords = true; R.saidDone = /\bdone\b/.test(el.className); }
     return t;
   }
@@ -88,8 +89,9 @@
   function paintHeard(on) {
     holdBtn(on);
     const lis = on && listening(); // a new hold starts clean (the last sentence must not look like this one), and a hold that heard nothing says so
-    if (lis && !R.wasListening) { R.said = ''; R.saidDone = false; R.gotWords = false; R.miss = 0; }
-    if (!lis && R.wasListening && !R.gotWords) R.miss = performance.now();
+    if (lis && !R.wasListening) { R.endT = 0; R.holdT0 = performance.now(); R.said = ''; R.saidDone = false; R.gotWords = false; R.miss = 0; }
+    if (!lis && R.wasListening) R.endT = performance.now();
+    if (R.endT && !R.gotWords && performance.now() - R.endT > 1500) { R.miss = R.miss || R.endT; R.endT = 0; } // 1.5 s of grace: some recognizers answer a moment after you let go
     R.wasListening = lis;
     if (!heard) { heard = document.createElement('div'); heard.id = 'swHeard'; document.body.appendChild(heard); }
     if (!on) { heard.className = ''; return; }
@@ -115,9 +117,15 @@
   function finish() {
     const rec = R.rec; if (!rec || rec.final) return; rec.final = true; paintBtn();
     const tg = target(), lap = R.lapS || LAP_S; let went = false;
-    if (tg && YX.startMove) { try { YX.cineStop(); went = YX.startMove('orbit', tg, { dur: lap, deg: 360 }, () => setTimeout(() => stop(rec), 400)); } catch (e) { went = false; } }
+    if (tg && YX.startMove) { // a higher view: rise smoothly above the result first, then go round it looking down
+      try {
+        YX.cineStop(); const f = YX.poseNow(), want = Math.max(7, (tg.y || 0) + (tg.size ? tg.size[1] : 3) * 0.9 + 6), up = want - f.y, crane = R.craneS != null ? R.craneS : 2.5;
+        const orbit = () => { try { YX.cineStop(); return YX.startMove('orbit', tg, { dur: lap, deg: 360, amount: 1.5 }, () => setTimeout(() => stop(rec), 400)); } catch (e) { return false; } };
+        went = up > 1 ? YX.startMove('crane', tg, { dur: crane, amount: up }, orbit) : orbit(); if (up > 1 && !went) went = orbit();
+      } catch (e) { went = false; }
+    }
     if (!went) setTimeout(() => stop(rec), 300);
-    else setTimeout(() => stop(rec), (lap * 3 + 8) * 1000); // a slow machine may never finish the lap: the film ends anyway
+    else setTimeout(() => stop(rec), (lap * 3 + 12) * 1000); // a slow machine may never finish the lap: the film ends anyway
   }
   function stop(rec) { if (R.rec !== rec || rec.stopping) return; rec.stopping = true; rec.secs = (performance.now() - rec.t0) / 1000; cancelAnimationFrame(rec.raf); try { rec.mr.stop(); } catch (e) { done(rec); } }
   function cleanup(mic, rec) { if (rec) clearInterval(rec.iv); paintHeard(false); if (mic) for (const t of mic.getTracks()) t.stop(); document.body.classList.remove('cinema'); YX.filmFrame(null); const hud = $('cine'); if (hud) hud.textContent = ''; }
