@@ -69,8 +69,20 @@
     mr.ondataavailable = (e) => { if (e.data && e.data.size) rec.chunks.push(e.data); }; mr.onstop = () => done(rec);
     mr.start(1000); paintBtn();
     const loop = () => { if (R.rec !== rec) return; rec.raf = requestAnimationFrame(loop); paintFrame(); tick(rec); };
-    loop();
+    rec.iv = setInterval(() => { if (R.rec === rec) paintHeard(!rec.final); }, 120); loop();
     U.toast(mic ? T('开始录制，没有时间限制：说话吧。想结束就按 Esc 或点按钮，我会绕它一圈', 'Recording with your voice, no time limit: talk to the town. Press Esc or the button when you want to stop, and I take one lap around it') : T('开始录制（没有麦克风声音），没有时间限制。按 Esc 结束', 'Recording (no microphone), no time limit. Esc to stop'));
+  }
+  /* what you see while recording: the page hides its own caption in film mode, so this strip says whether you were heard (it is on your screen only, not in the film) */
+  let heard = null;
+  function paintHeard(on) {
+    if (!heard) { heard = document.createElement('div'); heard.id = 'swHeard'; document.body.appendChild(heard); }
+    if (!on) { heard.className = ''; return; }
+    const ls = lines(), say = ls.find((l) => l.k === 'say'), listen = listening(); let t, k;
+    if (listen) { t = '🎙 ' + T('在听…', 'Listening…') + (say ? ' ' + say.t.replace(/^🎙 /, '').replace(/…$/, '') : ''); k = 'listen'; }
+    else if (say && R.saidDone) { t = '✓ ' + T('听到了：', 'Heard: ') + say.t; k = 'ok'; }
+    else if (say) { t = say.t; k = 'ok'; }
+    else { t = T('按住空格说话', 'Hold Space and talk'); k = 'idle'; }
+    heard.textContent = t; heard.className = 'on ' + k;
   }
   function tick(rec) { // hud, the quiet that ends the story, the time limit
     const now = performance.now(), dt = (now - rec.last) / 1000; rec.last = now; const secs = (now - rec.t0) / 1000, hud = $('cine'); if (hud) hud.textContent = 'REPLAY ' + Math.floor(secs) + 's' + (rec.final ? T(' · 最后一圈', ' · last lap') : T(' · 按 Esc 结束', ' · Esc to stop'));
@@ -91,9 +103,9 @@
     else setTimeout(() => stop(rec), (lap * 3 + 8) * 1000); // a slow machine may never finish the lap: the film ends anyway
   }
   function stop(rec) { if (R.rec !== rec || rec.stopping) return; rec.stopping = true; rec.secs = (performance.now() - rec.t0) / 1000; cancelAnimationFrame(rec.raf); try { rec.mr.stop(); } catch (e) { done(rec); } }
-  function cleanup(mic) { if (mic) for (const t of mic.getTracks()) t.stop(); document.body.classList.remove('cinema'); YX.filmFrame(null); const hud = $('cine'); if (hud) hud.textContent = ''; }
+  function cleanup(mic, rec) { if (rec) clearInterval(rec.iv); paintHeard(false); if (mic) for (const t of mic.getTracks()) t.stop(); document.body.classList.remove('cinema'); YX.filmFrame(null); const hud = $('cine'); if (hud) hud.textContent = ''; }
   function done(rec) {
-    if (R.rec !== rec) return; R.rec = null; cleanup(rec.mic); paintBtn();
+    if (R.rec !== rec) return; R.rec = null; cleanup(rec.mic, rec); paintBtn();
     const blob = new Blob(rec.chunks, { type: rec.type }); R.lastMs = Math.round(rec.secs * 1000);
     if (!blob.size) return U.toast(T('没有录到画面', 'Nothing was recorded'));
     const d = new Date(), p2 = (v) => String(v).padStart(2, '0'); R.last = { size: blob.size, secs: rec.secs, type: rec.type, audio: !!rec.mic };
@@ -103,7 +115,7 @@
 
   /* ---------- the button ---------- */
   function paintBtn() { if (!btn) return; const on = !!R.rec; btn.textContent = on ? (R.rec.final ? T('收尾中…', 'Finishing…') : T('■ 结束并环绕', '■ Finish with a lap')) : T('● 回放', '● Replay it'); btn.classList.toggle('on', on); btn.disabled = on && R.rec.final; }
-  const st = document.createElement('style'); st.textContent = '#swReplayBtn{position:fixed;left:10px;bottom:74px;z-index:4;padding:5px 10px;border:0;border-radius:6px;background:rgba(14,16,20,.7);color:#fff;font:600 11px/1.2 var(--f-ui,system-ui);cursor:pointer}#swReplayBtn:hover,#swReplayBtn.on{background:rgba(190,50,40,.88)}#swReplayBtn:disabled{opacity:.6;cursor:default}#swTrain{bottom:104px!important}';
+  const st = document.createElement('style'); st.textContent = '#swReplayBtn{position:fixed;left:10px;bottom:74px;z-index:4;padding:5px 10px;border:0;border-radius:6px;background:rgba(14,16,20,.7);color:#fff;font:600 11px/1.2 var(--f-ui,system-ui);cursor:pointer}#swReplayBtn:hover,#swReplayBtn.on{background:rgba(190,50,40,.88)}#swReplayBtn:disabled{opacity:.6;cursor:default}#swTrain{bottom:104px!important}#swHeard{position:fixed;left:50%;bottom:64px;transform:translateX(-50%);z-index:9;max-width:min(860px,90vw);padding:9px 18px;border-radius:999px;font:600 18px/1.3 var(--f-ui,system-ui);color:#fff;background:rgba(14,16,20,.82);pointer-events:none;display:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#swHeard.on{display:block}#swHeard.listen{background:rgba(190,50,40,.9)}#swHeard.ok{background:rgba(40,110,60,.9)}';
   document.head.appendChild(st); btn = document.createElement('button'); btn.id = 'swReplayBtn'; btn.title = T('录下整个过程：画面、模型在做什么、你的声音，最后绕它一圈', 'Film the whole story: the picture, what the model is doing, your voice, and a lap around the result'); btn.onclick = start; document.body.appendChild(btn); paintBtn();
   R.start = start; R.finish = finish;
 })();
