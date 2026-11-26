@@ -15,7 +15,7 @@
   const prevLog = YX.hooks.log; YX.hooks.log = function (e) { if (R.rec && e && !R.entries.includes(e)) R.entries.push(e); if (prevLog) return prevLog.apply(this, arguments); };
   const clip = (ctx, s, w) => { s = String(s || ''); while (s.length > 3 && ctx.measureText(s).width > w) s = s.slice(0, -2); return s; };
   { const sp = $('spellText'); if (sp && window.MutationObserver) new MutationObserver(() => { R.spellTick = performance.now(); }).observe(sp, { childList: true, characterData: true, subtree: true }); } // the page rewrites its caption on every partial and every final, even when the words are the same
-  { const mc = $('mic'); if (mc && window.MutationObserver) new MutationObserver(() => { const on = mc.classList.contains('on'); if (on && !R.micOn) R.micT0 = performance.now(); R.micOn = on; }).observe(mc, { attributes: true, attributeFilter: ['class'] }); } // the moment a hold begins, exactly
+  { const mc = $('mic'); if (mc && window.MutationObserver) new MutationObserver(() => { const on = mc.classList.contains('on'); if (on && !R.micOn) R.micT0 = performance.now(); R.micOn = on; gate(on); }).observe(mc, { attributes: true, attributeFilter: ['class'] }); } // the moment a hold begins, exactly
   function spoken() { // the sentence as the town shows it while you hold Space (the page hides that caption in film mode, so it is read here and drawn into the picture)
     const el = $('spellText'), on = el && /\bon\b/.test(el.className); let t = '';
     if (on) { const c = el.cloneNode(true); c.querySelectorAll('.seal').forEach((x) => x.remove()); t = c.textContent.trim(); }
@@ -78,6 +78,14 @@
   R.captions = () => lines().map((l) => l.t);
   R.sample = () => { const r = R.rec; if (!r) return null; const d = r.g.getImageData(0, 0, SIZE[0], SIZE[1] - 140).data; let lum = 0, lit = 0; for (let i = 0; i < d.length; i += 4 * 97) { const v = d[i] + d[i + 1] + d[i + 2]; lum += v; if (v > 30) lit++; } return { avg: Math.round(lum / (d.length / (4 * 97)) / 3), lit }; };
 
+  /* ---------- the microphone is open only while you hold (Space or the 🎙 button), so the room around you is not in the film ---------- */
+  let gateT = 0;
+  function micSet(v) { const r = R.rec; if (!r || !r.mic) return; for (const t of r.mic.getAudioTracks()) t.enabled = v; r.micOpen = v; }
+  function gate(open) { if (!R.rec || !R.rec.mic) return; clearTimeout(gateT); if (open) micSet(true); else gateT = setTimeout(() => micSet(false), 700); } // a short tail, so the end of a sentence is not cut
+  R.gate = gate;
+  window.addEventListener('keydown', (e) => { if (R.rec && e.code === 'Space' && !e.repeat && !/^(INPUT|TEXTAREA)$/.test((e.target && e.target.tagName) || '')) gate(true); }, true);
+  window.addEventListener('keyup', (e) => { if (R.rec && e.code === 'Space') gate(false); }, true);
+
   /* ---------- recording ---------- */
   const mimes = (audio) => (audio ? ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'] : ['video/mp4;codecs=avc1.640028', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']);
   const pick = (audio) => mimes(audio).find((m) => { try { return MediaRecorder.isTypeSupported(m); } catch (e) { return false; } }) || '';
@@ -94,13 +102,14 @@
     const stream = comp.captureStream(30); let msrc = null, mixed = false, ac = YX.audio && YX.audio.ctx();
     if (ac) { try { if (ac.state === 'suspended') await ac.resume(); const dest = ac.createMediaStreamDestination(); if (mic) { msrc = ac.createMediaStreamSource(mic); msrc.connect(dest); } YX.audio.tap = dest; for (const t of dest.stream.getAudioTracks()) stream.addTrack(t); mixed = true; } catch (e) { ac = null; msrc = null; YX.audio.tap = null; } } // your voice and the town's own sounds, mixed into one track
     if (!mixed && mic) for (const t of mic.getAudioTracks()) stream.addTrack(t);
+    if (mic) for (const t of mic.getAudioTracks()) t.enabled = false; // closed until you hold
     const mime = pick(!!mic || mixed); let mr; try { mr = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 6e6 } : undefined); } catch (e) { cleanup(mic); return U.toast(T('录制没能启动', 'Recording could not start')); }
     const rec = (R.rec = { mr, mic, msrc, town: mixed, comp, g, chunks: [], t0: performance.now(), type: (mr.mimeType || mime || 'video/webm').split(';')[0], seen: false, quiet: 0, final: false, raf: 0, last: performance.now() });
     mr.ondataavailable = (e) => { if (e.data && e.data.size) rec.chunks.push(e.data); }; mr.onstop = () => done(rec);
     mr.start(1000); paintBtn();
     const loop = () => { if (R.rec !== rec) return; rec.raf = requestAnimationFrame(loop); paintFrame(); tick(rec); };
     rec.iv = setInterval(() => { if (R.rec === rec) { paintHeard(!rec.final); paintScan(); } }, 120); loop();
-    U.toast(mic ? T('开始录制，没有时间限制：说话吧。想结束就按 Esc 或点按钮，我会绕它一圈', 'Recording with your voice, no time limit: talk to the town. Press Esc or the button when you want to stop, and I take one lap around it') : T('开始录制（没有麦克风声音），没有时间限制。按 Esc 结束', 'Recording (no microphone), no time limit. Esc to stop'));
+    U.toast(mic ? T('开始录制，没有时间限制。只在你按住空格或 🎙 时才录你的声音。想结束就按 Esc，我会绕它一圈', 'Recording, no time limit. Your microphone is on only while you hold Space or 🎙. Press Esc to stop, and I take one lap around it') : T('开始录制（没有麦克风声音），没有时间限制。按 Esc 结束', 'Recording (no microphone), no time limit. Esc to stop'));
   }
   /* what you see while recording: the page hides its own caption in film mode, so this strip says whether you were heard (it is on your screen only, not in the film) */
   let heard = null, hold = null;
@@ -108,8 +117,8 @@
     if (!hold) {
       hold = document.createElement('button'); hold.id = 'swHold'; hold.type = 'button'; hold.textContent = '🎙'; document.body.appendChild(hold);
       const mic = () => $('mic'), fire = (t) => { const m = mic(); if (m) m.dispatchEvent(new PointerEvent(t, { bubbles: true, cancelable: true, pointerType: 'mouse' })); };
-      hold.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); try { hold.setPointerCapture(e.pointerId); } catch (x) {} hold.classList.add('down'); fire('pointerdown'); });
-      for (const t of ['pointerup', 'pointercancel']) hold.addEventListener(t, (e) => { e.stopPropagation(); hold.classList.remove('down'); fire('pointerup'); });
+      hold.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); try { hold.setPointerCapture(e.pointerId); } catch (x) {} hold.classList.add('down'); gate(true); fire('pointerdown'); });
+      for (const t of ['pointerup', 'pointercancel']) hold.addEventListener(t, (e) => { e.stopPropagation(); hold.classList.remove('down'); gate(false); fire('pointerup'); });
       hold.addEventListener('contextmenu', (e) => e.preventDefault());
     }
     hold.title = T('按住说话（也可以按住空格）', 'Hold to talk (or hold Space)'); hold.classList.toggle('on', !!on);
@@ -156,7 +165,7 @@
     else setTimeout(() => stop(rec), (lap * 3 + 12) * 1000); // a slow machine may never finish the lap: the film ends anyway
   }
   function stop(rec) { if (R.rec !== rec || rec.stopping) return; rec.stopping = true; rec.secs = (performance.now() - rec.t0) / 1000; cancelAnimationFrame(rec.raf); try { rec.mr.stop(); } catch (e) { done(rec); } }
-  function cleanup(mic, rec) { if (rec) { clearInterval(rec.iv); scan.until = 0; paintScan(); try { if (YX.audio) YX.audio.tap = null; if (rec.msrc) rec.msrc.disconnect(); } catch (e) {} } paintHeard(false); if (mic) for (const t of mic.getTracks()) t.stop(); document.body.classList.remove('cinema'); YX.filmFrame(null); const hud = $('cine'); if (hud) hud.textContent = ''; }
+  function cleanup(mic, rec) { if (rec) { clearInterval(rec.iv); clearTimeout(gateT); scan.until = 0; paintScan(); try { if (YX.audio) YX.audio.tap = null; if (rec.msrc) rec.msrc.disconnect(); } catch (e) {} } paintHeard(false); if (mic) for (const t of mic.getTracks()) t.stop(); document.body.classList.remove('cinema'); YX.filmFrame(null); const hud = $('cine'); if (hud) hud.textContent = ''; }
   function done(rec) {
     if (R.rec !== rec) return; R.rec = null; cleanup(rec.mic, rec); paintBtn();
     const blob = new Blob(rec.chunks, { type: rec.type }); R.lastMs = Math.round(rec.secs * 1000);
