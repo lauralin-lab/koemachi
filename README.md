@@ -76,7 +76,7 @@ Sentences the built-in grammar knows run instantly and cost nothing; anything el
   instead, so a comparison never changes your town. **Clear lanes** removes it all. Each model is asked once, so a comparison of four costs four calls.
 
 - **Replay it** (built). The **● Replay it** button (bottom left) films the whole story of a request: every frame of the 3D view is drawn together with what Tinker is doing (the model in use,
-  your sentence, *Inkling · working…*, Look & Fix's *Checking… / Fixing…*, and the names above the lanes of Watch it learn), and recorded at 1280×720 with your microphone if you allow it. There is no time limit: it keeps filming through the long builds and the pauses until
+  your sentence, *Inkling · working…*, Look & Fix's *Checking… / Fixing…*, and the names above the lanes of Watch it learn), and recorded at 1280×720 with your microphone if you allow it, mixed with the town's own sounds. When Look & Fix looks at a new object, the picture it shows the model appears on the film with a scan line, and then its verdict (a talking townsperson's synthesized speech is the one sound the browser does not let a page record). There is no time limit: it keeps filming through the long builds and the pauses until
   you press **Esc** or the button, then the camera takes one lap around the result and the clip opens like any other (the ordinary film tools stop at 10 s). Everything stays on your computer; the clip is saved by your browser.
 
 ## Add your own generators

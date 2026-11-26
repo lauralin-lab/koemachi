@@ -40,8 +40,9 @@
   function parse(text) { const m = String(text || '').match(/\{[\s\S]*\}/); if (!m) throw new Error('no JSON in the check'); const j = JSON.parse(m[0]); const problems = (Array.isArray(j.problems) ? j.problems : []).map(String).filter(Boolean).slice(0, 3); return { match: (j.match === true || j.match === 'true') && !problems.length, problems, fix: String(j.fix || '') }; /* a problem the check names is a problem, whatever it says about matching */ }
   L.check = async function (o, ask, round, signal) { // -> { match, problems, fix, shot: { b64, bytes } }
     const shot = L.capture(o); if (!shot) throw new Error('nothing to look at');
+    if (L.onLook) try { L.onLook({ phase: 'look', b64: shot.b64, round, ask }); } catch (e) {} // the picture the model is about to be shown (Replay it draws it)
     const res = await M.sample([{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: shot.b64 } }, { type: 'text', text: PROMPT(ask, YX.lang) }] }], { modelTier: 'quick', task: 'check', label: 'look-check r' + round, cache: false, signal });
-    const out = Object.assign(parse(res.text), { shot }); L.history.push({ ask, round, match: out.match, problems: out.problems, fix: out.fix, shot: out.shot.b64 }); return out;
+    const out = Object.assign(parse(res.text), { shot }); if (L.onLook) try { L.onLook({ phase: 'verdict', b64: shot.b64, round, match: out.match, problems: out.problems }); } catch (e) {} L.history.push({ ask, round, match: out.match, problems: out.problems, fix: out.fix, shot: out.shot.b64 }); return out;
   };
 
   /* ---------- the corner note ---------- */
