@@ -61,6 +61,8 @@ Sentences the built-in grammar knows run instantly and cost nothing; anything el
 
 ## The Tinker features
 
+Press **✦ Tinker features** (bottom left): it lists Look & Fix, Train my world, Watch it learn and Replay it, whether each is on, and how to start it. Look & Fix can be switched off there.
+
 - **Look & Fix** (built). After the model builds a *new kind* of object, the page renders it alone from a temporary camera, shows the picture to the model together with your request, and if the model names a
   problem ("wheels were floating") revises the code and rebuilds it, with the old look dissolving over the new, up to two rounds. It runs in the background: you see the object at once, a small
   note in the corner says *Checking… / Fixing… / Fixed: … / Looks right*, and after a command that wrote nothing new it says *not needed* so you can tell it did not run, and the before and after pictures of every fix are kept in `data/lookfix/`. Thinking effort is set per kind of
