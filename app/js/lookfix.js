@@ -52,6 +52,17 @@
     const st = document.createElement('style'); st.textContent = '#lfBox{position:fixed;right:12px;bottom:12px;z-index:5;display:flex;flex-direction:column;gap:6px;align-items:flex-end;pointer-events:none}#lfBox div{max-width:min(320px,80vw);padding:7px 11px;border-radius:9px;background:rgba(14,16,20,.82);color:#f4efe6;font:500 12.5px/1.35 var(--f-ui,system-ui);box-shadow:0 6px 20px rgba(0,0,0,.3);transition:opacity .5s}#lfBox div.ok{border-left:3px solid #6fd08c}#lfBox div.fix{border-left:3px solid #ffd84a}#lfBox div.off{opacity:0}#lfBox div button{pointer-events:auto;margin-left:10px;padding:3px 9px;border:1px solid rgba(255,255,255,.35);border-radius:6px;background:rgba(255,255,255,.1);color:#fff;font:600 11.5px/1.2 var(--f-ui,system-ui);cursor:pointer}#lfBox div button:hover{background:rgba(255,255,255,.22)}';
     document.head.appendChild(st); box = document.createElement('div'); box.id = 'lfBox'; box.setAttribute('role', 'status'); document.body.appendChild(box); return box;
   }
+  L.note = function (text) { const s = L.status('Look & Fix'); s.say(text); s.end(text, ''); }; // a plain line in the corner: no model call, only words
+  { /* So you can tell it did not run, and why: after a command the model answered, if nothing new was written for it, say so. */
+    const prev = YX.hooks.log, T = YX.T;
+    YX.hooks.log = function (e) {
+      try {
+        if (e && e.tier === 'invent') L.lastInvent = performance.now();
+        if (e && e.status === 'ok' && ['quick', 'default', 'complex'].includes(e.tier) && !e.lfNoted) { e.lfNoted = true; setTimeout(() => { if (!(L.lastInvent >= e.t0) && !L.busy && L.enabled) L.note(T('不需要：这次没有现写新东西（目录里已有的东西，或只是修改）', 'not needed: nothing new was written (a built-in object, or just an edit)')); }, 1500); }
+      } catch (x) {}
+      if (prev) return prev.apply(this, arguments);
+    };
+  }
   L.status = function (label) { // one line per object being looked at
     const line = document.createElement('div'); line.className = ''; ensureBox().appendChild(line); let gone = 0;
     return {

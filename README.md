@@ -63,7 +63,7 @@ Sentences the built-in grammar knows run instantly and cost nothing; anything el
 
 - **Look & Fix** (built). After the model builds a *new kind* of object, the page renders it alone from a temporary camera, shows the picture to the model together with your request, and if the model names a
   problem ("wheels were floating") revises the code and rebuilds it, with the old look dissolving over the new, up to two rounds. It runs in the background: you see the object at once, a small
-  note in the corner says *Checking… / Fixing… / Fixed: … / Looks right*, and the before and after pictures of every fix are kept in `data/lookfix/`. Thinking effort is set per kind of
+  note in the corner says *Checking… / Fixing… / Fixed: … / Looks right*, and after a command that wrote nothing new it says *not needed* so you can tell it did not run, and the before and after pictures of every fix are kept in `data/lookfix/`. Thinking effort is set per kind of
   call in `site/tinker.js`; everything runs at `low`, which was the fastest setting that gave correct results in testing.
 - **Train my world** (built). Every model result you keep (it did not fail and you did not undo it within 30 seconds) is written as a chat example to `data/sessions.jsonl`; the corner counter
   shows *Learned from: N / 30 edits*. From 30 edits, the **Train my world** button (bottom left) trains a LoRA (rank 16, 3 epochs) on thinkingmachines/Inkling-2-Small with `train/train.py`,
