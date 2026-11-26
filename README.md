@@ -61,6 +61,8 @@ Sentences the built-in grammar knows run instantly and cost nothing; anything el
 
 ## The Tinker features
 
+While a new object is being made, a card at the top right shows the run-up stage by stage: *reading your sentence*, *thinking how to build it*, *writing the parts* (the count grows as the code streams in). Look & Fix then shows the picture it takes of the result with a scan line, what it found wrong, and stays up while the code is fixed and looked at again. (Inkling can take 10 to 40 seconds before it writes its first line of code; the card is there so that wait is not blank.)
+
 Press **✦ Tinker features** (bottom left): it lists Look & Fix, Train my world, Watch it learn and Replay it, whether each is on, and how to start it. Look & Fix can be switched off there.
 
 - **Look & Fix** (built). After the model builds a *new kind* of object, the page renders it alone from a temporary camera, shows the picture to the model together with your request, and if the model names a
